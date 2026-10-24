@@ -10,6 +10,8 @@ Public Apple Silicon beta with the illustrated Midnight dashboard, persistent la
 
 Developed by **PwnedG0blin** · macOS **14+** · **MIT license** · **1.0 Beta 7.3**
 
+[Website](https://pwnedg0blin.pages.dev/) · [All projects](https://pwnedg0blin.pages.dev/projekte) · [Support](https://pwnedg0blin.pages.dev/support)
+
 [Deutsch: vollständige Anleitung](README.de.md) · [Setup](LIES_MICH_ZUERST.md) · [Mac test builds](https://github.com/PwnedG0blin/Stratovo/actions/workflows/macos.yml) · [Report an issue](https://github.com/PwnedG0blin/Stratovo/issues)
 
 Stratovo brings Android ARM64, Windows ARM64 and Ubuntu ARM guest systems into a native Mac interface. Install Android APKs, use persistent guest storage, and open Android and Ubuntu in resizable display windows. Windows uses a direct native Metal graphics window by default. Only one guest runs at a time. System images, engines and drivers are set up separately.
