@@ -1,5 +1,7 @@
 # Stratovo · Android, Windows und Ubuntu auf dem Mac
 
+[Website](https://pwnedg0blin.pages.dev/) · [Alle Projekte](https://pwnedg0blin.pages.dev/projekte) · [Unterstützen](https://pwnedg0blin.pages.dev/support)
+
 Entwickelt von **PwnedG0blin** · **1.0 Beta 7.3 · Mitternacht** · macOS 14+ · Apple Silicon.
 
 Die neue bebilderte Übersicht zeigt Windows, Android und Ubuntu mit einer dauerhaft
