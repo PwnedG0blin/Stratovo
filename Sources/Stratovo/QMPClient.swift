@@ -65,9 +65,9 @@ enum QMPClient {
         }
         return uuid.lowercased()
     }
-    static func typeText(_ input: WindowsTextInput, socket: String, progress: @escaping (Int) -> Void) async throws {
+    static func typeText(_ input: WindowsTextInput, socket: String, interval: Double = 0.045, progress: @escaping (Int) -> Void) async throws {
         let stream = LocalStream(socket: socket)
-        let timeout = watchdog(stream, seconds: Double(input.chordCount) * 0.08 + 10)
+        let timeout = watchdog(stream, seconds: Double(input.chordCount) * max(0.08, interval + 0.035) + 10)
         defer { timeout.cancel(); stream.close() }
         try await withTaskCancellationHandler {
             _ = try await line(stream)
@@ -80,7 +80,7 @@ enum QMPClient {
                     // QEMU releases these keys itself after 20 ms, even if the app disconnects.
                     _ = try await command("send-key", id: id, stream: stream, arguments: ["keys": keys, "hold-time": 20])
                     id += 1
-                    try await Task.sleep(nanoseconds: 45_000_000)
+                    try await Task.sleep(nanoseconds: UInt64(max(0.045, interval) * 1_000_000_000))
                 }
                 progress(index + 1)
             }

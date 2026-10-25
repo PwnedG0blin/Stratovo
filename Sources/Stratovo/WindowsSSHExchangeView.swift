@@ -63,11 +63,7 @@ struct GuestFileExchangeView: View {
                         .disabled(!available || controller.busy || model.windowsPasteBusy)
                 }
             }.font(.caption)
-            if controller.kind != .ubuntu {
-                Button(L10n.text("Vergleichsbild bei Darstellungsfehler aufnehmen")) { controller.captureComparison(model: model) }
-                    .disabled(!available || controller.busy || model.windowsPasteBusy)
-                    .font(.caption)
-            }
+
         }
         .onAppear { controller.attach(storage: model.storage) }
         .onChange(of: model.storage?.id) { _, _ in selection = []; controller.attach(storage: model.storage) }
