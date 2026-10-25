@@ -3,6 +3,28 @@ import StratovoCore
 
 @MainActor
 enum QMPClient {
+    static func insertExchangeMedia(_ iso: URL, socket: String) async throws {
+        let stream = LocalStream(socket: socket)
+        let timeout = watchdog(stream)
+        defer { timeout.cancel(); stream.close() }
+        _ = try await line(stream)
+        _ = try await command("qmp_capabilities", id: 1, stream: stream)
+        _ = try await command("blockdev-change-medium", id: 2, stream: stream,
+            arguments: ["id": "stratovo-exchange-cd", "filename": iso.path, "format": "raw", "read-only-mode": "read-only"])
+    }
+    static func forwardSSH(port: Int, socket: String) async throws {
+        guard (49152...65535).contains(port) else { throw GuestError.invalidResources }
+        let stream = LocalStream(socket: socket)
+        let timeout = watchdog(stream)
+        defer { timeout.cancel(); stream.close() }
+        _ = try await line(stream)
+        _ = try await command("qmp_capabilities", id: 1, stream: stream)
+        let result = try await command("human-monitor-command", id: 2, stream: stream,
+            arguments: ["command-line": "hostfwd_add net0 tcp:127.0.0.1:\(port)-:22"])
+        guard let output = result as? String, output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw StorageMigration.failure("Der lokale SSH-Zugang zur VM konnte nicht geöffnet werden.")
+        }
+    }
     static func sendKeys(_ keys: [String], socket: String) async throws {
         let stream = LocalStream(socket: socket)
         let timeout = watchdog(stream)
@@ -95,3 +117,4 @@ enum QMPClient {
         throw NSError(domain: "OpenGuest.QMP", code: 1, userInfo: [NSLocalizedDescriptionKey: "QEMU-Nachricht zu lang."])
     }
 }
+

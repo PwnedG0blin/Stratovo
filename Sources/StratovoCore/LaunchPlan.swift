@@ -149,6 +149,10 @@ public enum LaunchPlan {
             args += ["-netdev", "user,id=net0", "-device", "virtio-net-pci,netdev=net0" + mac]
         }
         else { args += ["-nic", "none"] }
+        // Dedicated read-only media for the visible SSH setup helper.
+        args += ["-drive", "if=none,id=stratovo-exchange,media=cdrom,readonly=on",
+                 "-device", "usb-bot,id=stratovo-exchange-usb,bus=usb.0",
+                 "-device", "scsi-cd,id=stratovo-exchange-cd,drive=stratovo-exchange,bus=stratovo-exchange-usb.0,scsi-id=0,lun=0"]
         if installing, let iso, !iso.isEmpty {
             args += ["-blockdev", try block("installer", driver: "raw", path: iso, readOnly: true),
                      "-device", "usb-bot,id=installer-usb,bus=usb.0",
@@ -200,3 +204,4 @@ public enum LaunchPlan {
     }
 
 }
+

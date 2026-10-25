@@ -1,85 +1,22 @@
-# Dateiaustausch · Mac, Windows, Ubuntu und Android
+# Dateiaustausch
 
-Der gemeinsame Mac-Ordner heißt `Austausch` und liegt direkt im gewählten
-Datenordner. Bei `/Volumes/Extern/OpenGuest` ist das
-`/Volumes/Extern/OpenGuest/Austausch`. Er wird beim Öffnen im Finder oder vor
-einer Übertragung angelegt. Vorhandene Dateien werden dabei nicht gelöscht.
+## Windows und Ubuntu
 
-In Stratovo links **Dateiaustausch** wählen. In jedem Player gibt es oben
-ebenfalls eine Schaltfläche **Dateiaustausch**. Beide App-Ausgaben verwenden
-denselben Ablauf. Der Host bleibt ein Apple-Silicon-Mac mit macOS 14+.
+1. Das gewünschte System vollständig starten und dessen Desktop öffnen. In Windows muss das Netzwerk eingeschaltet sein.
+2. In Stratovo **Dateiaustausch** öffnen und beim gewünschten System **Dateiaustausch starten** wählen.
+3. In Windows im sichtbaren Stratovo-Helfer **Dateiaustausch einrichten** wählen. Die Administratorabfrage im Gastsystem bestätigen. Ubuntu zeigt seine eigene Administratorabfrage.
+4. Nach erfolgreicher Einrichtung erscheinen die Dateien des Benutzerordners in Stratovo. Ordner öffnen, **Dateien senden** oder Dateien markieren und **Ausgewählte Dateien empfangen** wählen.
 
-## Windows und Ubuntu: denselben Ordner über SMB verwenden
+Die Verbindung wird über SSH/SFTP eingerichtet. Eine macOS-Dateifreigabe ist nicht nötig. Der Benutzername wird ermittelt; spätere Verbindungen verwenden die gekoppelte Schlüsselanmeldung.
 
-Einmalig auf dem Mac:
+Nach dem Update Windows einmal vollständig herunterfahren und neu starten. Falls der Helfer nicht erscheint: **Dieser PC → STRATOVO → Stratovo.exe** öffnen. Im Helfer zeigt **Diagnose oeffnen** den Einrichtungsablauf. Eine bereits verbundene Einrichtung kann über **Verbindung erneut einrichten** repariert werden. Der SSH-Hostschlüsselfehler mit sofort abbrechendem Dienst wird dabei automatisch korrigiert.
 
-1. In Stratovo **Austausch im Finder öffnen** wählen.
-2. **macOS-Freigabeeinstellungen öffnen** wählen. Alternativ:
-   Systemeinstellungen → Allgemein → Teilen → Dateifreigabe.
-3. Den Ordner **Austausch** zu den geteilten Ordnern hinzufügen.
-   Deinem gewünschten Mac-Benutzer **Lesen & Schreiben** erlauben.
-4. Unter **Optionen** SMB einschalten und den gewünschten Mac-Benutzer für
-   Windows-Dateifreigabe aktivieren. macOS fragt dessen Passwort selbst ab.
-   Stratovo speichert dieses Passwort nicht.
+## Android
 
-Gib nur den vorgesehenen Austauschordner frei. SMB-Freigaben können auch im
-lokalen Netzwerk erreichbar sein; Stratovo schaltet sie nicht automatisch ein.
-Die Freigabe muss auf dem Mac **Austausch** heißen. Bei mehreren gleichnamigen
-Freigaben zuerst deren Pfad prüfen. Gastnetzwerk und macOS-Dateifreigabe müssen
-eingeschaltet sein.
+Android starten und warten, bis der Start abgeschlossen ist. **Datei zu Android senden** kopiert die gewählte Datei nach **Downloads → Stratovo-Austausch**, in einen neuen Unterordner. Zum Abholen gewünschte Dateien in Android nach **Downloads → Stratovo-Austausch** kopieren und in Stratovo **Android-Dateien abholen** wählen. Der Finder öffnet den neuen Importordner. Dieser bestehende Weg nutzt ADB.
 
-### Windows
+## English
 
-**Ordner in Windows öffnen** wählen. Alternativ im Explorer diese Adresse eingeben:
+Start the guest desktop, open **File exchange**, and choose **Start file exchange** under Windows or Ubuntu. In the Windows helper choose file exchange setup, then confirm the guest administrator prompt. Browse folders and use the send/receive buttons after setup. No macOS SMB share is needed.
 
-`\\10.0.2.2\Austausch`
-
-Mit dem freigegebenen **Mac-Benutzer und dessen Mac-Passwort** anmelden.
-Für ein dauerhaftes Laufwerk: Explorer → Dieser PC → Netzlaufwerk verbinden,
-die Adresse eintragen und bei Bedarf die Verbindung bei der Anmeldung
-wiederherstellen lassen. Die Laufwerkszuordnung ist optional und wird nicht
-ungefragt durch Stratovo angelegt.
-
-### Ubuntu
-
-Dateien → Andere Orte → Mit Server verbinden:
-
-`smb://10.0.2.2/Austausch`
-
-Als registrierter Benutzer mit den freigegebenen Mac-Zugangsdaten anmelden.
-Bei Bedarf ein Lesezeichen im Dateimanager anlegen. Änderungen betreffen direkt
-die Dateien im Mac-Ordner; es handelt sich nicht um getrennte Kopien.
-
-## Android: ohne zusätzlichen Dateimanager
-
-Android starten und warten, bis es vollständig hochgefahren ist.
-
-- **Datei zu Android senden:** eine Datei auswählen. Sie wird in einen neuen
-  Unterordner unter **Downloads/Stratovo-Austausch** kopiert. Vorhandene
-  Android-Dateien werden nicht überschrieben.
-- **Android-Dateien abholen:** in Android Dateien unter
-  **Downloads/Stratovo-Austausch** ablegen und die Schaltfläche wählen.
-  Stratovo kopiert den Inhalt in einen neuen Ordner unter **Austausch/Android**
-  und öffnet ihn im Finder. Vorhandene Mac-Importe bleiben erhalten.
-
-Diese Aktionen nutzen die bereits eingerichtete ADB-Verbindung zur laufenden
-Stratovo-Android-Sitzung. Es gibt keinen automatischen Löschabgleich und keine
-dauerhafte Einbindung desselben Verzeichnisses in Android. Direkter SMB-Zugriff
-ist zusätzlich mit einem Android-Dateimanager mit SMB-Unterstützung möglich;
-Server: `10.0.2.2`, Freigabe: `Austausch`.
-
-Die Dateien benötigen auf der jeweiligen Zielseite freien Speicher.
-Unvollständige Übertragungen können bei Verbindungsabbruch erhalten bleiben;
-vor dem Entfernen der Quelle die Zielkopie prüfen.
-
-## Referenzen
-
-- [Apple: Mac-Dateien für Windows freigeben](https://support.apple.com/guide/mac-help/mchlp1657/mac)
-- [QEMU: Benutzernetzwerk](https://www.qemu.org/docs/master/system/devices/net.html)
-- [Android: ADB](https://developer.android.com/tools/adb)
-
-Entwickelt von **PwnedG0blin**.
-
-## Anleitung direkt in der App
-
-Unter **Dateiaustausch** sind alle Schritte nummeriert und dauerhaft sichtbar: Mac-Ordner öffnen, einmalige SMB-Freigabe, Windows Arm, Ubuntu sowie Android-Senden und Android-Abholen. Die Freigabe-Einrichtung wird getrennt von den Gast-Schritten erklärt. In der direkten Windows-Grafikansicht erreicht man denselben Bereich über **Windows Arm → Dateiaustausch** im Stratovo-Hauptfenster.
+After updating Stratovo, fully shut down and restart Windows. If necessary, open **This PC → STRATOVO → Stratovo.exe**. The helper can display setup diagnostics and repairs invalid private SSH host-key permissions before starting the service. For Android, use the existing send/import actions and **Downloads → Stratovo-Austausch**.

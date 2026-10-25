@@ -7,7 +7,12 @@ final class ExchangeController: ObservableObject {
     @Published private(set) var transferring = false
     @Published private(set) var status = ""
     private var transferTask: Task<Void, Never>?
-    func cancelTransfer() { transferTask?.cancel() }
+    let windowsSSH = GuestFileExchangeController(kind: .windows)
+    let ubuntuSSH = GuestFileExchangeController(kind: .ubuntu)
+    func cancelTransfer() {
+        transferTask?.cancel()
+        windowsSSH.cancel(disconnect: true); ubuntuSSH.cancel(disconnect: true)
+    }
 
     func openFinder(model: AppModel) {
         do {
@@ -78,4 +83,5 @@ final class ExchangeController: ObservableObject {
         }
     }
 }
+
 

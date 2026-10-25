@@ -873,3 +873,44 @@
 "Auflösung und Lautstärke bleiben in Stratovo steuerbar. Grafikübersetzung und tatsächlicher Renderer hängen vom Emulator ab; die Diagnose zeigt den erkannten Renderer. Das Schließen des nativen Fensters kann Android beenden." = "Resolution and volume remain available in Stratovo. Graphics translation and the actual renderer depend on the emulator; diagnostics report the detected renderer. Closing the native window may shut Android down.";
 "Das native Android-Fenster bei Bedarf über das Dock auswählen. Ein geschlossenes Emulatorfenster kann Android beenden; danach neu starten." = "Select the native Android window in the Dock if needed. Closing the emulator window may shut Android down; restart it afterwards.";
 "Gilt beim nächsten Android-Start. Die virtuelle Displayfrequenz ist keine Messung und keine Garantie der Spiel-FPS. Im direkten Modus gibt es kein zusätzliches Stream-FPS-Limit." = "Applies on the next Android start. The virtual refresh rate is neither a measurement nor a guarantee of game FPS. Direct mode has no additional stream FPS limit.";
+
+
+"Ausgewählte Dateien empfangen" = "Receive selected files";
+
+"Benutzerordner" = "User folder";
+
+"Dateiaustausch starten" = "Start file exchange";
+
+"Dateien empfangen." = "Files received.";
+
+"Dateien senden" = "Send files";
+
+"Dateien übertragen." = "Files transferred.";
+
+"Die geschützte Verbindung wird eingerichtet …" = "Setting up the secure connection …";
+
+"Eine Ebene höher" = "Up one folder";
+
+"Einrichtung startet. Eine Administratorabfrage bitte im Systemfenster bestätigen." = "Setup is starting. Confirm any administrator prompt in the guest system.";
+
+"Einrichtung wird gestartet. Bitte das Systemfenster kurz unberührt lassen." = "Starting setup. Leave the guest system window untouched briefly.";
+
+"Einrichtung wird mit dem anderen Tastaturlayout erneut gestartet …" = "Retrying setup with the other keyboard layout …";
+
+"Gesendete Dateien erscheinen in einem neuen Unterordner. Nach dem Empfangen öffnet sich der Speicherort auf deinem Mac." = "Sent files appear in a new subfolder. After receiving files, their location opens on your Mac.";
+
+"Stratovo erkennt dein Konto und richtet die Verbindung automatisch ein. Eine Administratorabfrage bitte im Systemfenster bestätigen." = "Stratovo detects your account and sets up the connection automatically. Confirm any administrator prompt in the guest system.";
+
+"Trennen" = "Disconnect";
+
+"Verbindung erneut einrichten" = "Set up connection again";
+
+"Verbindung wird automatisch neu eingerichtet …" = "Reconfiguring the connection automatically …";
+
+"Verbindung wird geprüft …" = "Checking connection …";
+
+"Verbunden. Ordner öffnen oder Dateien auswählen." = "Connected. Open folders or select files.";
+
+"Vergleichsbild bei Darstellungsfehler aufnehmen" = "Capture comparison image for display issues";
+
+"Vorgang abgebrochen." = "Operation cancelled.";

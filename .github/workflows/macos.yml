@@ -3,11 +3,51 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  windows-helper:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and validate visible Windows setup helper
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = 'Packaging/WindowsExchange'
+          New-Item -ItemType Directory -Force windows-helper | Out-Null
+          $compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
+          $sourceFile = (Resolve-Path (Join-Path $source 'StratovoExchange.cs')).Path
+          $manifestFile = (Resolve-Path (Join-Path $source 'app.manifest')).Path
+          $outputFile = Join-Path "$PWD" 'windows-helper/Stratovo.exe'
+          & $compiler /nologo /target:winexe /platform:anycpu /optimize+ "/out:$outputFile" "/win32manifest:$manifestFile" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Runtime.Serialization.dll /reference:System.ServiceProcess.dll $sourceFile
+          if ($LASTEXITCODE -ne 0) { throw 'Windows helper compilation failed.' }
+          $test = Start-Process -FilePath "$PWD/windows-helper/Stratovo.exe" -ArgumentList '--self-test' -PassThru -Wait
+          if ($test.ExitCode -ne 0) { throw 'Windows helper validation failed.' }
+          $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
+          if ($defender.AMServiceEnabled -and $defender.AntivirusEnabled) {
+            Start-MpScan -ScanType CustomScan -ScanPath "$PWD/windows-helper/Stratovo.exe" -ErrorAction Stop
+            $detections = Get-MpThreatDetection | Where-Object { ($_.Resources -join ' ') -match 'Stratovo.exe' }
+            if ($detections) { throw 'Defender detected the Windows setup helper.' }
+            'Defender custom scan completed on the CI runner; no helper detection reported.' | Set-Content windows-helper/Defender-scan.txt
+          } else {
+            'Defender scan unavailable on this CI runner. No local-VM verdict is established.' | Set-Content windows-helper/Defender-scan.txt
+          }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Stratovo-Windows-Exchange-Helper
+          path: windows-helper/*
+          if-no-files-found: error
+          retention-days: 14
+
   build:
+    needs: windows-helper
     runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Stratovo-Windows-Exchange-Helper
+          path: Packaging/WindowsExchange
       - name: Select Xcode with macOS 26 SDK for all build steps
         run: |
           sdk_major="$(xcrun --sdk macosx --show-sdk-version | cut -d. -f1)"
@@ -44,6 +84,8 @@ jobs:
         run: |
           command -v qemu-img >/dev/null || brew install qemu
           command -v swtpm >/dev/null || brew install swtpm
+      - name: Verify dedicated read-only SSH setup CD
+        run: python3 scripts/test-exchange-media.py
       - name: Test, compile and package Apple Silicon app
         env:
           OPENGUEST_REQUIRE_QEMU_TEST: "1"
@@ -55,7 +97,7 @@ jobs:
       - name: Save workspace previews
         uses: actions/upload-artifact@v7
         with:
-          name: Stratovo-Beta7.3-Window-Preview
+          name: Stratovo-Beta7.4-Window-Preview
           path: dist/workspace-preview/*.png
           if-no-files-found: error
           retention-days: 14
@@ -76,14 +118,14 @@ jobs:
           mkdir -p dist/installer
           /usr/bin/ditto dist/Stratovo.app dist/installer/Stratovo.app
           ln -s /Applications dist/installer/Applications
-          /usr/bin/hdiutil create -volname Stratovo -srcfolder dist/installer -ov -format UDZO dist/Stratovo_1.0.0-beta.7.3_AppleSilicon.dmg
+          /usr/bin/hdiutil create -volname Stratovo -srcfolder dist/installer -ov -format UDZO dist/Stratovo_1.0.0-beta.7.4_AppleSilicon.dmg
       - name: Upload compiled app
         uses: actions/upload-artifact@v7
         with:
           name: Stratovo-macOS-AppleSilicon-test-app
           path: |
             dist/Stratovo-macOS-AppleSilicon.app.zip
-            dist/Stratovo_1.0.0-beta.7.3_AppleSilicon.dmg
+            dist/Stratovo_1.0.0-beta.7.4_AppleSilicon.dmg
           if-no-files-found: error
           retention-days: 14
 
@@ -99,22 +141,23 @@ jobs:
         with:
           name: Stratovo-macOS-AppleSilicon-test-app
           path: release-assets
-      - name: Publish official 1.0 Beta 7.3 after successful tests
+      - name: Publish official 1.0 Beta 7.4 after successful tests
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
-          tag=v1.0.0-beta.7.3
+          tag=v1.0.0-beta.7.4
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Release already exists; preserving published assets."
             exit 0
           fi
           cd release-assets
-          sha256sum Stratovo-macOS-AppleSilicon.app.zip Stratovo_1.0.0-beta.7.3_AppleSilicon.dmg > SHA256SUMS
+          sha256sum Stratovo-macOS-AppleSilicon.app.zip Stratovo_1.0.0-beta.7.4_AppleSilicon.dmg > SHA256SUMS
           cd ..
           gh release create "$tag" --target "$RELEASE_COMMIT" --prerelease \
-            --title "Stratovo 1.0 Beta 7.3" --notes-file docs/RELEASE_1.0_BETA7_3.md \
+            --title "Stratovo 1.0 Beta 7.4" --notes-file docs/RELEASE_1.0_BETA7_4.md \
             release-assets/Stratovo-macOS-AppleSilicon.app.zip \
-            release-assets/Stratovo_1.0.0-beta.7.3_AppleSilicon.dmg \
+            release-assets/Stratovo_1.0.0-beta.7.4_AppleSilicon.dmg \
             release-assets/SHA256SUMS
+

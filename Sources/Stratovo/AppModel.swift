@@ -1361,6 +1361,62 @@ final class AppModel: ObservableObject {
         }
     }
 
+    private var exchangeMedia: WindowsExchangeMedia?
+    func prepareWindowsExchangeMedia(baseURL: String, publicKey: String? = nil, capture: Bool = false) async throws -> String {
+        guard running, activeGuest == "windows", let socket = qmpSocket, let resources = Bundle.main.resourceURL else {
+            throw StorageMigration.failure("Windows zuerst starten.")
+        }
+        let helper = resources.appendingPathComponent("WindowsExchange/Stratovo.exe")
+        let media = try await Task.detached(priority: .utility) {
+            try WindowsExchangeMedia.create(helper: helper, baseURL: baseURL, publicKey: publicKey, capture: capture)
+        }.value
+        do {
+            try Task.checkCancellation()
+            guard running, qmpSocket == socket else { throw CancellationError() }
+            try await QMPClient.insertExchangeMedia(media.iso, socket: socket)
+        } catch { media.remove(); throw error }
+        exchangeMedia?.remove(); exchangeMedia = media
+        // Windows needs a moment to enumerate the newly inserted CD.
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+        return WindowsExchangeMedia.launch
+    }
+
+    private var exchangeSSHForward: (socket: String, port: Int)?
+
+    func prepareGuestSSHExchange() async throws -> Int {
+        guard running, ["windows", "ubuntu"].contains(activeGuest), (activeGuest != "windows" || settings.windowsNetwork), let socket = qmpSocket else {
+            throw StorageMigration.failure("Das gewählte System mit Netzwerk starten.")
+        }
+        if let forward = exchangeSSHForward, forward.socket == socket { return forward.port }
+        for _ in 0..<8 {
+            let port = Int.random(in: 49152...65535)
+            do {
+                try await QMPClient.forwardSSH(port: port, socket: socket)
+                guard running, ["windows", "ubuntu"].contains(activeGuest), qmpSocket == socket else { throw CancellationError() }
+                exchangeSSHForward = (socket, port)
+                return port
+            } catch is CancellationError { throw CancellationError() }
+            catch { continue }
+        }
+        throw StorageMigration.failure("SSH-Zugang zur VM nicht verfügbar. Windows neu starten und erneut verbinden.")
+    }
+
+    func runGuestExchangeSetup(_ command: String, kind: ExchangeGuest, layout: WindowsTextLayout? = nil, progress: @escaping (Int, Int) -> Void) async throws {
+        guard running, activeGuest == kind.rawValue, !windowsPasteBusy, let socket = qmpSocket else {
+            throw StorageMigration.failure("Das gewählte System starten und laufende Eingaben abwarten.")
+        }
+        let input = try WindowsTextInput(text: command, layout: layout ?? windowsTextLayout)
+        windowsPasteBusy = true
+        defer { windowsPasteBusy = false }
+        try Task.checkCancellation()
+        try await QMPClient.sendKeys(kind == .windows ? ["meta_l", "r"] : ["alt", "f2"], socket: socket)
+        try await Task.sleep(nanoseconds: 900_000_000)
+        try await QMPClient.sendKeys(["ctrl", "a"], socket: socket)
+        try await QMPClient.typeText(input, socket: socket, interval: 0.12) { progress($0, input.count) }
+        try Task.checkCancellation()
+        try await QMPClient.sendKeys(["ret"], socket: socket)
+    }
+
     func keyboard(code: UInt16, text: String, down: Bool) {
         if ["windows", "ubuntu"].contains(activeGuest), windowsPasteBusy { return }
         if activeGuest == "android" {
@@ -1635,6 +1691,7 @@ final class AppModel: ObservableObject {
         if let windowsSession { await windowsSession.stop() }
         windowsSession = nil
         ubuntuSession?.stop(); ubuntuSession = nil
+        exchangeMedia?.remove(); exchangeMedia = nil; exchangeSSHForward = nil
         qmpSocket = nil
         windowsDisplaySocket = nil
         activeGuest = ""
@@ -1798,3 +1855,4 @@ final class AppModel: ObservableObject {
         return panel.runModal() == .OK ? panel.url?.path : nil
     }
 }
+

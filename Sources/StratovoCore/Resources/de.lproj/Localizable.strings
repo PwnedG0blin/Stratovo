@@ -774,3 +774,44 @@
 "Auflösung und Lautstärke bleiben in Stratovo steuerbar. Grafikübersetzung und tatsächlicher Renderer hängen vom Emulator ab; die Diagnose zeigt den erkannten Renderer. Das Schließen des nativen Fensters kann Android beenden." = "Auflösung und Lautstärke bleiben in Stratovo steuerbar. Grafikübersetzung und tatsächlicher Renderer hängen vom Emulator ab; die Diagnose zeigt den erkannten Renderer. Das Schließen des nativen Fensters kann Android beenden.";
 "Das native Android-Fenster bei Bedarf über das Dock auswählen. Ein geschlossenes Emulatorfenster kann Android beenden; danach neu starten." = "Das native Android-Fenster bei Bedarf über das Dock auswählen. Ein geschlossenes Emulatorfenster kann Android beenden; danach neu starten.";
 "Gilt beim nächsten Android-Start. Die virtuelle Displayfrequenz ist keine Messung und keine Garantie der Spiel-FPS. Im direkten Modus gibt es kein zusätzliches Stream-FPS-Limit." = "Gilt beim nächsten Android-Start. Die virtuelle Displayfrequenz ist keine Messung und keine Garantie der Spiel-FPS. Im direkten Modus gibt es kein zusätzliches Stream-FPS-Limit.";
+
+
+"Ausgewählte Dateien empfangen" = "Ausgewählte Dateien empfangen";
+
+"Benutzerordner" = "Benutzerordner";
+
+"Dateiaustausch starten" = "Dateiaustausch starten";
+
+"Dateien empfangen." = "Dateien empfangen.";
+
+"Dateien senden" = "Dateien senden";
+
+"Dateien übertragen." = "Dateien übertragen.";
+
+"Die geschützte Verbindung wird eingerichtet …" = "Die geschützte Verbindung wird eingerichtet …";
+
+"Eine Ebene höher" = "Eine Ebene höher";
+
+"Einrichtung startet. Eine Administratorabfrage bitte im Systemfenster bestätigen." = "Einrichtung startet. Eine Administratorabfrage bitte im Systemfenster bestätigen.";
+
+"Einrichtung wird gestartet. Bitte das Systemfenster kurz unberührt lassen." = "Einrichtung wird gestartet. Bitte das Systemfenster kurz unberührt lassen.";
+
+"Einrichtung wird mit dem anderen Tastaturlayout erneut gestartet …" = "Einrichtung wird mit dem anderen Tastaturlayout erneut gestartet …";
+
+"Gesendete Dateien erscheinen in einem neuen Unterordner. Nach dem Empfangen öffnet sich der Speicherort auf deinem Mac." = "Gesendete Dateien erscheinen in einem neuen Unterordner. Nach dem Empfangen öffnet sich der Speicherort auf deinem Mac.";
+
+"Stratovo erkennt dein Konto und richtet die Verbindung automatisch ein. Eine Administratorabfrage bitte im Systemfenster bestätigen." = "Stratovo erkennt dein Konto und richtet die Verbindung automatisch ein. Eine Administratorabfrage bitte im Systemfenster bestätigen.";
+
+"Trennen" = "Trennen";
+
+"Verbindung erneut einrichten" = "Verbindung erneut einrichten";
+
+"Verbindung wird automatisch neu eingerichtet …" = "Verbindung wird automatisch neu eingerichtet …";
+
+"Verbindung wird geprüft …" = "Verbindung wird geprüft …";
+
+"Verbunden. Ordner öffnen oder Dateien auswählen." = "Verbunden. Ordner öffnen oder Dateien auswählen.";
+
+"Vergleichsbild bei Darstellungsfehler aufnehmen" = "Vergleichsbild bei Darstellungsfehler aufnehmen";
+
+"Vorgang abgebrochen." = "Vorgang abgebrochen.";

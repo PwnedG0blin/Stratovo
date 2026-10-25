@@ -2,12 +2,14 @@
 
 [Website](https://pwnedg0blin.pages.dev/) · [Alle Projekte](https://pwnedg0blin.pages.dev/projekte) · [Unterstützen](https://pwnedg0blin.pages.dev/support)
 
-Entwickelt von **PwnedG0blin** · **1.0 Beta 7.3 · Mitternacht** · macOS 14+ · Apple Silicon.
+Entwickelt von **PwnedG0blin** · **1.0 Beta 7.4 · Mitternacht** · macOS 14+ · Apple Silicon.
 
 Die neue bebilderte Übersicht zeigt Windows, Android und Ubuntu mit einer dauerhaft
 erreichbaren Startleiste. Dunkelblau, Türkis und Violett sowie optionales natives
 Liquid Glass ab macOS 26 prägen das neue Design. Die Darstellung ist einstellbar;
 Bedienungshilfen haben Vorrang. Dies bleibt ausdrücklich eine fortlaufende Beta.
+
+Neu in Beta 7.4: SSH/SFTP-Dateiaustausch mit Einrichtung direkt in Stratovo. Der Windows-Helfer korrigiert fehlerhafte SSH-Hostschlüsselrechte automatisch vor dem Dienststart. Die Android-Player-Änderungen bleiben privat.
 
 Eine Oberfläche für Android ARM64, Windows mit 3D über Metal und Ubuntu ARM.
 Android und Ubuntu laufen im Stratovo-Player. Windows Arm nutzt standardmäßig ein frei skalierbares direktes Metal-Grafikfenster; Text einfügen und Dateiaustausch bleiben im Hauptfenster erreichbar.
@@ -17,11 +19,11 @@ Gäste und Werkzeuge liegen auf deinem selbst gewählten Datenträger.
 - Ein Windows-Bereich mit 3D auf deiner bisherigen Installation, ohne neue Testkopie.
 - Ubuntu 26.04.1 LTS ARM64 mit geprüftem Download und eigener 64-GiB-Festplatte.
 - Systemabhängige App-Sprache, 14 Sprachordner; technische Texte teilweise mit Ersatztexten.
-- Austauschordner im gewählten Datenordner: Windows/Ubuntu über SMB, Android über Datei-Senden und Abholen.
+- Dateiaustausch für Windows/Ubuntu über SSH/SFTP direkt in Stratovo; Android weiterhin über Datei-Senden und Abholen.
 - GitHub-Updates mit Prüfungen vor der Installation.
 
 [Download](https://github.com/PwnedG0blin/Stratovo/releases) · [Schritt-für-Schritt-Anleitung](LIES_MICH_ZUERST.md) ·
-[Neu in Beta 7.3](docs/RELEASE_1.0_BETA7_3.md)
+[Neu in Beta 7.4](docs/RELEASE_1.0_BETA7_4.md)
 
 3D und Gastkompatibilität bleiben experimentell. Für den ersten Grafikbau werden
 vollständiges Xcode mit Metal-Werkzeugen und mindestens 30 GiB benötigt. Die App
@@ -34,3 +36,4 @@ Copyright © 2026 PwnedG0blin und Mitwirkende · [Lizenz](LICENSE)
 [Dateiaustausch zwischen Mac, Windows, Ubuntu und Android einrichten](docs/DATEIAUSTAUSCH.md).
 
 Windows Arm startet standardmäßig im eigenen Cocoa-/Metal-Grafikfenster ohne VNC-Bildkopien. Die eingebettete Ansicht bleibt experimentell. Text einfügen und Dateiaustausch findest du in der Windows-Steuerung.
+

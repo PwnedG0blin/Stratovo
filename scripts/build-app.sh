@@ -57,6 +57,8 @@ rm -f "$app_path/Contents/Resources/Aufraeumen.command" \
     "$app_path/Contents/Resources/scripts/storage-cleanup.py" \
     "$app_path/Contents/Resources/scripts/trash-packages.swift" \
     "$project_dir/dist/private-installer/Aufraeumen.command"
+test -f "$project_dir/Packaging/WindowsExchange/Stratovo.exe"
+/usr/bin/ditto "$project_dir/Packaging/WindowsExchange" "$app_path/Contents/Resources/WindowsExchange"
 bash scripts/build-icon.sh
 # Local development signature only. It is not Developer ID signing or notarization.
 /usr/bin/codesign --force --sign - "$app_path"
@@ -64,3 +66,4 @@ bash scripts/build-icon.sh
 python3 scripts/test-relocated-app.py "$app_path" "$binary_dir"
 echo "Lokale Test-App erstellt: $app_path"
 if [[ "${1:-}" == "--open" ]]; then /usr/bin/open "$app_path"; fi
+
