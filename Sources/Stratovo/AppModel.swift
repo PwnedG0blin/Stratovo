@@ -802,7 +802,7 @@ final class AppModel: ObservableObject {
 
     var canRemoveGuest: Bool {
         storageReady && !running && !busy && !installer.running && !ubuntu.downloading &&
-        !apkBusy && !diagnosticBusy && !exchange.windowsSSH.busy && !exchange.ubuntuSSH.busy && !exchange.androidFiles.busy
+        !apkBusy && !diagnosticBusy && !exchange.windowsSSH.busy && !exchange.ubuntuSSH.busy && !exchange.transferring
     }
 
     /// Called only after the approved guest paths have reached the macOS Trash.
