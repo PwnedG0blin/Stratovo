@@ -7,16 +7,17 @@ struct ContentView: View {
     var releaseLabel = AppPresentation.releaseLabel
     @State private var selection: WorkspaceTab = .dashboard
     @State private var showDiagnostics = false
+    @State private var showAbout = false
+    @State private var settingsSection = "general"
     @AppStorage(WorkspaceAppearance.preferenceKey) private var appearance = WorkspaceAppearance.automatic
 
     var body: some View {
         HStack(spacing: 0) {
-            sidebar.frame(width: 230)
+            sidebar.frame(width: 210)
                 .modifier(WorkspaceChromeSurface(cornerRadius: 0))
                 .overlay(alignment: .trailing) { Rectangle().fill(Color.white.opacity(0.13)).frame(width: 1) }
             VStack(spacing: 0) {
                 header.padding(.horizontal, 28).padding(.top, 26).padding(.bottom, 20)
-                QuickLaunchBar(model: model) { selection = $0 }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         if !model.supportedHost || !model.hypervisorAvailable {
@@ -33,6 +34,7 @@ struct ContentView: View {
                 if model.running { sessionBar }
             }
         }
+        .disclosureGroupStyle(WorkspaceButtonDisclosureStyle())
         .modifier(WorkspaceWindowTheme())
         .frame(minWidth: 860, minHeight: 650).tint(MidnightPalette.turquoise)
         .onChange(of: model.settings.iso) { _, _ in model.refreshWindowsISO() }
@@ -45,13 +47,27 @@ struct ContentView: View {
 
     @ViewBuilder private var workspace: some View {
         switch selection {
-        case .dashboard: DashboardView(model: model) { selection = $0 }
+        case .dashboard: DashboardView(model: model) {
+            if $0 == .setup { settingsSection = "storage" }
+            selection = $0
+        }
         case .updates: GitHubUpdatesView(model: model)
-        case .android: AndroidWorkspaceView(model: model)
-        case .windows: WindowsWorkspaceView(model: model)
-        case .ubuntu: UbuntuView(model: model, controller: model.ubuntu)
+        case .android:
+            VStack(alignment: .leading, spacing: 18) {
+                AndroidWorkspaceView(model: model)
+            }
+        case .windows:
+            VStack(alignment: .leading, spacing: 18) {
+                WindowsWorkspaceView(model: model)
+                GuestRemovalSection(model: model, kind: "windows")
+            }
+        case .ubuntu:
+            VStack(alignment: .leading, spacing: 18) {
+                UbuntuView(model: model, controller: model.ubuntu)
+                GuestRemovalSection(model: model, kind: "ubuntu")
+            }
         case .exchange: ExchangeFolderView(model: model, controller: model.exchange)
-        case .setup: SetupWorkspaceView(model: model)
+        case .setup: SetupWorkspaceView(model: model, initialSection: settingsSection).id(settingsSection)
         }
     }
 
@@ -66,18 +82,33 @@ struct ContentView: View {
             }.padding(.horizontal, 22).padding(.top, 24).padding(.bottom, 28)
             ScrollView {
                 VStack(spacing: 9) {
-                    ForEach([WorkspaceTab.dashboard, .windows, .android, .ubuntu, .exchange, .updates, .setup]) { tab in
+                    navigationButton(.dashboard)
+                    Divider().padding(.vertical, 8)
+                    ForEach([WorkspaceTab.windows, .android, .ubuntu]) { tab in
+                        navigationButton(tab)
+                    }
+                    Divider().padding(.vertical, 8)
+                    ForEach([WorkspaceTab.exchange, .updates, .setup]) { tab in
                         navigationButton(tab)
                     }
                 }.padding(.horizontal, 12)
             }
             Divider().padding(.horizontal, 22).padding(.top, 12)
-            DeveloperCredits().padding(.horizontal, 22).padding(.vertical, 18)
+            Button { showAbout = true } label: {
+                Label(L10n.text("Über Stratovo"), systemImage: "info.circle")
+                    .font(.callout).padding(.vertical, 16)
+            }.buttonStyle(.plain).padding(.horizontal, 22)
+            .popover(isPresented: $showAbout) {
+                DeveloperCredits().padding(24).frame(width: 300)
+            }
         }
     }
 
     private func navigationButton(_ tab: WorkspaceTab) -> some View {
-        Button { selection = tab } label: {
+        Button {
+            if tab == .setup { settingsSection = "general" }
+            selection = tab
+        } label: {
             HStack(spacing: 13) {
                 if tab == .windows || tab == .android || tab == .ubuntu {
                     GuestSystemSymbol(kind: tab == .windows ? "windows" : tab == .android ? "android" : "ubuntu")
@@ -85,7 +116,7 @@ struct ContentView: View {
                 } else {
                     Image(systemName: tab.icon).font(.system(size: 20, weight: .medium)).frame(width: 23)
                 }
-                Text(tab.title).font(.system(size: 15, weight: selection == tab ? .semibold : .regular))
+                Text(tab == .dashboard ? L10n.text("Meine Systeme") : tab.title).font(.system(size: 15, weight: selection == tab ? .semibold : .regular))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 17).padding(.vertical, 14)
@@ -103,15 +134,20 @@ struct ContentView: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(selection == .dashboard ? L10n.text("Deine Systeme") : selection.title)
-                    .font(.system(size: 34, weight: .bold))
-                Text(L10n.text(selection == .dashboard ? "Alles bereit für deinen nächsten Start." : selection.subtitle))
+                Text(selection == .dashboard ? L10n.text("Meine Systeme") : selection.title)
+                    .font(.system(size: 28, weight: .semibold))
+                Text(L10n.text(selection == .dashboard ? "System auswählen und starten." : selection.subtitle))
                     .font(.system(size: 16)).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
-            WorkspaceUtilityBar(tab: selection, busy: model.busy, canRefresh: !model.running,
-                                diagnose: { showDiagnostics = true }, refresh: { await model.refresh() })
-                .padding(.top, 5)
+            Menu {
+                Button(L10n.text("Aktualisieren")) { Task { await model.refresh() } }
+                    .disabled(model.busy || model.running)
+                Button(L10n.text("Diagnose")) { showDiagnostics = true }
+            } label: {
+                Image(systemName: "ellipsis.circle").font(.title3)
+            }.menuStyle(.borderlessButton).menuIndicator(.hidden)
+                .fixedSize().accessibilityLabel(L10n.text("Weitere Aktionen"))
         }
     }
 
@@ -136,7 +172,10 @@ enum AppPresentation {
     static func releaseLabel(info: [String: Any]) -> String {
         let version = info["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info["CFBundleVersion"] as? String ?? "dev"
-        let flavor = info["StratovoBuildFlavor"] as? String == "private" ? "Private Beta 7.3" : "Beta 7.3"
-        return "\(version) · \(flavor) · \(build)"
+        let flavor = info["StratovoBuildFlavor"] as? String == "private" ? "Private Beta" : "Beta"
+        let parts = (info["StratovoReleaseVersion"] as? String ?? "").components(separatedBy: "-beta.")
+        let suffix = parts.count == 2 ? " " + parts[1] : ""
+        return "\(version) · \(flavor)\(suffix) · \(build)"
     }
 }
+

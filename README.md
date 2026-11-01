@@ -1,14 +1,14 @@
 # Stratovo · Android, Windows & Ubuntu for Mac
 
-**1.0 Beta 7.4 · Midnight**
+**1.0 Beta 7.7 · Midnight**
 
-This public update adds SSH/SFTP file exchange for Windows and Ubuntu. Windows setup repairs invalid SSH host-key permissions automatically before starting the service. See the [Beta 7.4 release guide](docs/RELEASE_1.0_BETA7_4.md). Android player changes remain in private testing. This remains a prerelease.
+This public beta adds a compact system library, labeled settings buttons, clearer Android/download pages and installation removal through the macOS Trash. See the [Beta 7.7 release guide](docs/RELEASE_1.0_BETA7_7.md). Experimental private graphics changes remain in private testing.
 
 ## Android, Windows and Ubuntu for Mac
 
 **Free, open-source macOS app for Android emulation, Windows ARM64 and Ubuntu ARM virtual machines on Apple silicon.**
 
-Developed by **PwnedG0blin** · macOS **14+** · **MIT license** · **1.0 Beta 7.4**
+Developed by me, **PwnedG0blin** · macOS **14+** · **MIT license** · **1.0 Beta 7.7**
 
 [Website](https://pwnedg0blin.pages.dev/) · [All projects](https://pwnedg0blin.pages.dev/projekte) · [Support](https://pwnedg0blin.pages.dev/support)
 
@@ -18,7 +18,7 @@ Stratovo brings Android ARM64, Windows ARM64 and Ubuntu ARM guest systems into a
 
 ## Interface language
 
-Stratovo follows your preferred macOS language at launch. Override it under Setup → Language. Fourteen language folders are included: German, English, French, Spanish, Italian, Portuguese, Dutch, Polish, Turkish, Ukrainian, Arabic, Simplified Chinese, Japanese and Korean. Core controls are translated; technical text falls back to English, and some tool errors/logs retain their original language. Full technical translation is still in progress. Guest languages are independent.
+Stratovo follows your preferred macOS language at launch. Override it under Settings → General → Language. Fourteen language folders are included: German, English, French, Spanish, Italian, Portuguese, Dutch, Polish, Turkish, Ukrainian, Arabic, Simplified Chinese, Japanese and Korean. Core controls are translated; technical text falls back to English, and some tool errors/logs retain their original language. Full technical translation is still in progress. Guest languages are independent.
 
 ## Android on Apple silicon
 
@@ -40,6 +40,10 @@ Stratovo follows your preferred macOS language at launch. Override it under Setu
 - Same Stratovo player, keyboard, paste and trackpad controls. Plan about 80 GiB storage and 6–8 GiB guest RAM.
 
 [What changed](docs/RELEASE_1.0_BETA6.md) · [Safe cleanup after updating](docs/AUFRAEUMEN.md)
+
+## Manage installations
+
+Choose a system’s installation management action. Android lets you select the exact profile. Review the affected paths and data-loss warning, check the acknowledgment and choose **Delete**. Guest data is moved to the macOS Trash; emptying it deletes the files permanently. You will need fresh setup for the removed system. Other guests, shared runtimes, separate backups and online accounts are retained.
 
 ## File exchange
 
@@ -65,7 +69,7 @@ Contributions: [CONTRIBUTING.md](CONTRIBUTING.md) · Security and local data: [S
 
 ## Developer and support
 
-Developed by **PwnedG0blin**. [GitHub Sponsors](https://github.com/sponsors/PwnedG0blin) · [Patreon](https://www.patreon.com/cw/PwnedG0blinApp) · [X](https://x.com/PwnedG0blin)
+Developed by me, **PwnedG0blin**. [GitHub Sponsors](https://github.com/sponsors/PwnedG0blin) · [Patreon](https://www.patreon.com/cw/PwnedG0blinApp) · [X](https://x.com/PwnedG0blin)
 
 Copyright (c) 2026 PwnedG0blin and contributors. [MIT license](LICENSE). Voluntary sponsorship supports development; Stratovo remains free and without a subscription.
 

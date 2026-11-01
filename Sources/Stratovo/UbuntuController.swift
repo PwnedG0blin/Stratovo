@@ -15,6 +15,10 @@ final class UbuntuController: ObservableObject {
         isoReady = FileManager.default.fileExists(atPath: root.appendingPathComponent("ubuntu-26.04.1-desktop-arm64.iso").path)
         diskReady = FileManager.default.fileExists(atPath: root.appendingPathComponent("ubuntu.qcow2").path)
     }
+    func resetAfterRemoval(model: AppModel) {
+        status = L10n.text("Ubuntu noch nicht eingerichtet")
+        refresh(model: model)
+    }
     func download(model: AppModel) {
         guard !model.running, !model.busy, !downloading, let storage = model.storage,
               let helper = Bundle.main.resourceURL?.appendingPathComponent("GraphicsLab/ubuntu_vm.py") else { return }

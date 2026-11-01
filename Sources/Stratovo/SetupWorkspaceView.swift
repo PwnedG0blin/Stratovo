@@ -4,16 +4,46 @@ import StratovoCore
 @MainActor
 struct SetupWorkspaceView: View {
     @ObservedObject var model: AppModel
+    @State private var section: String
+    init(model: AppModel, initialSection: String = "general") {
+        self.model = model
+        _section = State(initialValue: initialSection)
+    }
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            LanguageSettingsView(model: model)
-            WorkspaceAppearanceSettings()
-            storageCard
-            SetupDownloadsView(model: model, installer: model.installer)
-            WorkspaceCard {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(spacing: 8) {
+                ForEach(["general", "storage", "downloads", "advanced"], id: \.self) { key in
+                    Button { section = key } label: {
+                        Text(L10n.text(["general": "Allgemein", "storage": "Speicher",
+                                        "downloads": "Downloads", "advanced": "Erweitert"][key] ?? key))
+                            .font(.callout.weight(section == key ? .semibold : .regular))
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(section == key ? MidnightPalette.turquoise : Color.secondary)
+                    .accessibilityAddTraits(section == key ? [.isSelected] : [])
+                }
+            }
+            switch section {
+            case "storage": storageCard
+            case "downloads": SetupDownloadsView(model: model, installer: model.installer)
+            case "advanced": enginesCard
+            default:
+                LanguageSettingsView(model: model)
+                WorkspaceAppearanceSettings()
+                hostCard
+                ContextHelpButton("Datenschutz") {
+                    Text(L10n.text("Stratovo enthält keine Telemetrie. Android, QEMU und das Gastbetriebssystem haben eigene Netzwerk- und Datenschutzeinstellungen. Protokolle und Einstellungen liegen lokal auf diesem Mac."))
+                }
+            }
+        }
+    }
+    private var enginesCard: some View {
+        WorkspaceCard {
                 VStack(alignment: .leading, spacing: 18) {
                     Text(L10n.text("Lokale Engines")).font(.title2.bold())
-                    Text(L10n.text("Vorhandene Engines und eigene Firmware auswählen. Downloads und Lizenzen werden oben direkt in Stratovo verwaltet."))
+                    Text(L10n.text("Vorhandene Engines und eigene Firmware auswählen. Downloads und Lizenzen werden im Bereich Downloads verwaltet."))
                         .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Android SDK").font(.subheadline.bold())
@@ -35,7 +65,9 @@ struct SetupWorkspaceView: View {
                     }
                 }
             }.disabled(model.running || model.busy)
-            WorkspaceCard {
+    }
+    private var hostCard: some View {
+        WorkspaceCard {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L10n.text("Dein Mac")).font(.headline)
                     LabeledContent(L10n.text("Arbeitsspeicher"), value: "\(model.totalMemoryGB) GB")
@@ -45,11 +77,6 @@ struct SetupWorkspaceView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            ContextHelpButton("Datenschutz") {
-                Text(L10n.text("Stratovo enthält keine Telemetrie. Android, QEMU und das Gastbetriebssystem haben eigene Netzwerk- und Datenschutzeinstellungen. Protokolle und Einstellungen liegen lokal auf diesem Mac."))
-                    .font(.body).foregroundStyle(.secondary)
-            }
-        }
     }
     private var storageCard: some View {
         WorkspaceCard {
@@ -83,3 +110,4 @@ struct SetupWorkspaceView: View {
         }.disabled(model.running || model.busy)
     }
 }
+

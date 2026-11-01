@@ -39,6 +39,10 @@ enum WindowsSetupKeychain {
         guard let data = result as? Data else { throw failure(errSecDecode) }
         return try JSONDecoder().decode(Credential.self, from: data)
     }
+    static func remove(storageID: String) throws {
+        let status = SecItemDelete(query(storageID: storageID) as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else { throw failure(status) }
+    }
     private static func failure(_ status: OSStatus) -> NSError {
         let message: String
         if status == errSecUserCanceled || status == errSecAuthFailed {

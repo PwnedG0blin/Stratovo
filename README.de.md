@@ -2,14 +2,13 @@
 
 [Website](https://pwnedg0blin.pages.dev/) · [Alle Projekte](https://pwnedg0blin.pages.dev/projekte) · [Unterstützen](https://pwnedg0blin.pages.dev/support)
 
-Entwickelt von **PwnedG0blin** · **1.0 Beta 7.4 · Mitternacht** · macOS 14+ · Apple Silicon.
+Entwickelt von mir, **PwnedG0blin** · **1.0 Beta 7.7 · Mitternacht** · macOS 14+ · Apple Silicon.
 
-Die neue bebilderte Übersicht zeigt Windows, Android und Ubuntu mit einer dauerhaft
-erreichbaren Startleiste. Dunkelblau, Türkis und Violett sowie optionales natives
-Liquid Glass ab macOS 26 prägen das neue Design. Die Darstellung ist einstellbar;
-Bedienungshilfen haben Vorrang. Dies bleibt ausdrücklich eine fortlaufende Beta.
+Die Systemübersicht zeigt Windows, Android und Ubuntu als kompakte Einträge mit einer Hauptaktion. Einstellungen sind über beschriftete Buttons erreichbar. Android und Downloads sind übersichtlicher gegliedert. Mitternachtsfarben und optionales Liquid Glass bleiben erhalten.
 
-Neu in Beta 7.4: SSH/SFTP-Dateiaustausch mit Einrichtung direkt in Stratovo. Der Windows-Helfer korrigiert fehlerhafte SSH-Hostschlüsselrechte automatisch vor dem Dienststart. Die Android-Player-Änderungen bleiben privat.
+Neu in Beta 7.7: Installationen lassen sich direkt in Stratovo entfernen. Bei Android wählst du das einzelne Profil. Nach Prüfung der angezeigten Pfade und Bestätigung per Häkchen wird **Löschen** aktiv. Die Gastdaten kommen in den macOS-Papierkorb und werden erst durch dessen Leeren endgültig gelöscht. Das entfernte System muss neu eingerichtet werden. Andere Installationen, gemeinsame Laufzeiten, eigene Sicherungen und Online-Konten bleiben erhalten.
+
+SSH/SFTP einschließlich der Windows-Hostschlüsselkorrektur bleibt enthalten. Private Grafik- und Firmware-Experimente sind nicht Bestandteil dieser öffentlichen Beta.
 
 Eine Oberfläche für Android ARM64, Windows mit 3D über Metal und Ubuntu ARM.
 Android und Ubuntu laufen im Stratovo-Player. Windows Arm nutzt standardmäßig ein frei skalierbares direktes Metal-Grafikfenster; Text einfügen und Dateiaustausch bleiben im Hauptfenster erreichbar.
@@ -23,7 +22,7 @@ Gäste und Werkzeuge liegen auf deinem selbst gewählten Datenträger.
 - GitHub-Updates mit Prüfungen vor der Installation.
 
 [Download](https://github.com/PwnedG0blin/Stratovo/releases) · [Schritt-für-Schritt-Anleitung](LIES_MICH_ZUERST.md) ·
-[Neu in Beta 7.4](docs/RELEASE_1.0_BETA7_4.md)
+[Neu in Beta 7.7](docs/RELEASE_1.0_BETA7_7.md)
 
 3D und Gastkompatibilität bleiben experimentell. Für den ersten Grafikbau werden
 vollständiges Xcode mit Metal-Werkzeugen und mindestens 30 GiB benötigt. Die App

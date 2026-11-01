@@ -108,3 +108,29 @@ struct WorkspaceHelpSheet<Content: View>: View {
             .modifier(WorkspaceDialogTheme())
     }
 }
+
+/// Section controls share the app's labeled button appearance. Expansion stays
+/// owned by DisclosureGroup, including callers with an explicit binding.
+struct WorkspaceButtonDisclosureStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                configuration.isExpanded.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "slider.horizontal.3").accessibilityHidden(true)
+                    configuration.label.font(.callout.weight(.semibold))
+                }
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .tint(configuration.isExpanded ? MidnightPalette.turquoise : Color.secondary)
+            .accessibilityAddTraits(configuration.isExpanded ? [.isSelected] : [])
+            if configuration.isExpanded {
+                configuration.content.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}

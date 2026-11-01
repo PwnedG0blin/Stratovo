@@ -800,6 +800,47 @@ final class AppModel: ObservableObject {
     }
     var resources: GuestResources { GuestResources(memoryMiB: settings.memoryGB * 1024, cores: settings.cores) }
 
+    var canRemoveGuest: Bool {
+        storageReady && !running && !busy && !installer.running && !ubuntu.downloading &&
+        !apkBusy && !diagnosticBusy && !exchange.windowsSSH.busy && !exchange.ubuntuSSH.busy && !exchange.androidFiles.busy
+    }
+
+    /// Called only after the approved guest paths have reached the macOS Trash.
+    /// Returns a visible warning if a separate Keychain cleanup needs attention.
+    func resetRemovedGuest(_ target: GuestRemovalTarget) -> String? {
+        guard let storage else { return nil }
+        exchange.cancelTransfer()
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "Stratovo.SSH.User." + target.kind + "." + storage.id)
+        switch target {
+        case .windows:
+            settings.installWindows = true
+            settings.localWindowsUser = "Benutzer"
+            localPassword = ""; localPasswordConfirmation = ""
+            windowsDiskBytes = nil; windowsIdentity = nil; windowsIdentityCanRestore = false
+            for key in ["OpenGuest.windowsDiskGiB.", "Pixelkoje.windowsGraphics.", "Pixelkoje.windowsResolution."] {
+                defaults.removeObject(forKey: key + storage.id)
+            }
+            do { try WindowsSetupKeychain.remove(storageID: storage.id) }
+            catch {
+                rememberWindowsCredential = false
+                credentialStatus = error.localizedDescription
+                return L10n.text("Die Gastdaten liegen im Papierkorb. Gespeicherte Windows-Zugangsdaten konnten nicht aus dem Schlüsselbund entfernt werden. Bitte in der Schlüsselbundverwaltung den Eintrag Stratovo · Windows-Einrichtung entfernen.")
+            }
+            credentialStatus = L10n.text("Gespeicherte Windows-Zugangsdaten entfernt.")
+        case .ubuntu:
+            ubuntu.resetAfterRemoval(model: self)
+            defaults.removeObject(forKey: "Stratovo.ubuntu.memoryMiB")
+            defaults.removeObject(forKey: "Stratovo.ubuntu.cores")
+        case .android(let name):
+            if settings.selectedAVD == name { settings.selectedAVD = "" }
+            devices.removeAll { $0.name == name }
+            settings.coldBoot = true
+            androidCleanupPlan = nil
+        }
+        return nil
+    }
+
     init(frameRateDefaults: UserDefaults = .standard, applyPerformanceDefaults: Bool = true) {
         self.frameRateDefaults = frameRateDefaults
         self.androidOutputMode = AndroidOutputMode(rawValue: frameRateDefaults.string(forKey: "Stratovo.androidOutputMode") ?? "player") ?? .player
