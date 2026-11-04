@@ -551,8 +551,8 @@ final class AppModel: ObservableObject {
     private struct AndroidGraphicsCheckpoint: Codable {
         let gpu: String
         let vulkan: Bool
-        let profile: AndroidPerformance
-        let output: AndroidOutputMode
+        let profile: String
+        let output: String
         let fps: Int
         let custom: Bool
         let width: String
@@ -570,8 +570,8 @@ final class AppModel: ObservableObject {
         guard !running, !busy, !settings.selectedAVD.isEmpty else { return }
         let checkpoint = AndroidGraphicsCheckpoint(gpu: settings.gpu,
             vulkan: androidVulkanEnabled,
-            profile: androidProfile,
-            output: androidOutputMode,
+            profile: androidProfile.rawValue,
+            output: androidOutputMode.rawValue,
             fps: androidTargetFPS,
             custom: androidCustomDisplay,
             width: androidDisplayWidth,
@@ -585,14 +585,16 @@ final class AppModel: ObservableObject {
     func restoreAndroidGraphicsCheckpoint() {
         guard !running, !busy, !settings.selectedAVD.isEmpty else { return }
         guard let data = UserDefaults.standard.data(forKey: androidGraphicsCheckpointKey),
-              let checkpoint = try? JSONDecoder().decode(AndroidGraphicsCheckpoint.self, from: data) else {
+              let checkpoint = try? JSONDecoder().decode(AndroidGraphicsCheckpoint.self, from: data),
+              let profile = AndroidPerformance(rawValue: checkpoint.profile),
+              let output = AndroidOutputMode(rawValue: checkpoint.output) else {
             androidGraphicsCheckpointStatus = L10n.text("Für dieses Profil ist noch kein Stand gespeichert.")
             return
         }
         settings.gpu = checkpoint.gpu
         androidVulkanEnabled = checkpoint.vulkan
-        androidProfile = checkpoint.profile
-        androidOutputMode = checkpoint.output
+        androidProfile = profile
+        androidOutputMode = output
         androidTargetFPS = checkpoint.fps
         androidCustomDisplay = checkpoint.custom
         androidDisplayWidth = checkpoint.width
