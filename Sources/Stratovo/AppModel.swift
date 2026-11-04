@@ -535,6 +535,139 @@ final class AppModel: ObservableObject {
     let audio = GuestAudioController()
     let installer = SetupInstaller()
     private let playerWindows = GuestPlayerWindows()
+    @Published private var hiddenGuestPlayers: Set<String> = []
+
+    func guestPlayerIsHidden(kind: String) -> Bool {
+        if kind == "android", androidUsesDirectDisplay { return false }
+        if kind == "windows", windowsUsesDirectDisplay { return false }
+        return hiddenGuestPlayers.contains(kind)
+    }
+
+    func setGuestPlayerVisible(_ visible: Bool, kind: String) {
+        if visible { hiddenGuestPlayers.remove(kind) }
+        else { hiddenGuestPlayers.insert(kind) }
+    }
+
+    private struct AndroidGraphicsCheckpoint: Codable {
+        let gpu: String
+        let vulkan: Bool
+        let profile: AndroidPerformance
+        let output: AndroidOutputMode
+        let fps: Int
+        let custom: Bool
+        let width: String
+        let height: String
+        let density: String
+    }
+
+    private var androidGraphicsCheckpointKey: String {
+        "Stratovo.androidGraphicsCheckpoint." + settings.selectedAVD
+    }
+
+    @Published private(set) var androidGraphicsCheckpointStatus = ""
+
+    func saveAndroidGraphicsCheckpoint() {
+        guard !running, !busy, !settings.selectedAVD.isEmpty else { return }
+        let checkpoint = AndroidGraphicsCheckpoint(gpu: settings.gpu,
+            vulkan: androidVulkanEnabled,
+            profile: androidProfile,
+            output: androidOutputMode,
+            fps: androidTargetFPS,
+            custom: androidCustomDisplay,
+            width: androidDisplayWidth,
+            height: androidDisplayHeight,
+            density: androidDisplayDensity)
+        guard let data = try? JSONEncoder().encode(checkpoint) else { return }
+        UserDefaults.standard.set(data, forKey: androidGraphicsCheckpointKey)
+        androidGraphicsCheckpointStatus = L10n.text("Grafikeinstellungen für dieses Profil gespeichert.")
+    }
+
+    func restoreAndroidGraphicsCheckpoint() {
+        guard !running, !busy, !settings.selectedAVD.isEmpty else { return }
+        guard let data = UserDefaults.standard.data(forKey: androidGraphicsCheckpointKey),
+              let checkpoint = try? JSONDecoder().decode(AndroidGraphicsCheckpoint.self, from: data) else {
+            androidGraphicsCheckpointStatus = L10n.text("Für dieses Profil ist noch kein Stand gespeichert.")
+            return
+        }
+        settings.gpu = checkpoint.gpu
+        androidVulkanEnabled = checkpoint.vulkan
+        androidProfile = checkpoint.profile
+        androidOutputMode = checkpoint.output
+        androidTargetFPS = checkpoint.fps
+        androidCustomDisplay = checkpoint.custom
+        androidDisplayWidth = checkpoint.width
+        androidDisplayHeight = checkpoint.height
+        androidDisplayDensity = checkpoint.density
+        androidGraphicsCheckpointStatus = L10n.text("Grafikeinstellungen wiederhergestellt. Sie gelten beim nächsten Start.")
+    }
+
+    func copyAndroidDiagnostics() async {
+        guard !diagnosticBusy else { return }
+        diagnosticBusy = true
+        defer { diagnosticBusy = false }
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        var lines = [
+            "Stratovo · Build \(build)",
+            "macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)",
+            "Android-Ausgabe: \((activeAndroidOutputMode ?? androidOutputMode).rawValue)",
+            "Renderer: \(androidRendererStatus)",
+            "Vulkan angefordert: \(androidVulkanEnabled)",
+            "Display: \(androidGuestRefreshHz) Hz"
+        ]
+        if activeGuest == "android", androidBooted, let adb, let port = androidPort, let session = process {
+            let serial = "emulator-\(port)"
+            let surface = try? await Self.capture(CommandSpec(executable: adb,
+                arguments: ["-s", serial, "shell", "dumpsys", "SurfaceFlinger"]))
+            let vulkan = try? await Self.capture(CommandSpec(executable: adb,
+                arguments: ["-s", serial, "shell", "pm", "list", "features"]))
+            guard process === session, androidPort == port else { return }
+            if surface?.status == 0 {
+                lines += (surface?.output ?? "").components(separatedBy: .newlines).filter {
+                    $0.hasPrefix("GLES:") || $0.contains("Vulkan device initialized:")
+                }.prefix(4)
+            }
+            if vulkan?.status == 0 {
+                lines += (vulkan?.output ?? "").components(separatedBy: .newlines).filter {
+                    $0.hasPrefix("feature:android.hardware.vulkan")
+                }.prefix(8)
+            }
+            let graphics = log.components(separatedBy: .newlines).compactMap { line in
+                ["EGL_BAD_CONFIG", "EGL_BAD_ATTRIBUTE", "AssetPackServiceImpl : onError(-2)"].first { line.contains($0) }
+            }
+            lines += Array(Set(graphics)).sorted()
+        }
+        NSPasteboard.general.clearContents()
+        if NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string) {
+            diagnosticStatus = L10n.text("Android-Diagnose kopiert.")
+        }
+    }
+
+    @Published private(set) var guestStorageUsage = ""
+    @Published private(set) var guestStorageUsageBusy = false
+
+    func measureGuestStorage() async {
+        guard !guestStorageUsageBusy, storageReady, let storage else { return }
+        guestStorageUsageBusy = true
+        defer { guestStorageUsageBusy = false }
+        do {
+            try storage.validate()
+            let result = try await Self.capture(CommandSpec(executable: "/usr/bin/du",
+                arguments: ["-k", "-d", "1", storage.root]), timeout: 45)
+            guard self.storage == storage else { return }
+            guard result.status == 0 else { throw GuestError.commandFailed(result.status, result.output) }
+            let root = URL(fileURLWithPath: storage.root).standardizedFileURL.path
+            guestStorageUsage = result.output.split(separator: "\n").compactMap { row -> String? in
+                let fields = row.split(separator: "\t", maxSplits: 1)
+                guard fields.count == 2, let kib = Int64(fields[0]), kib >= 0, kib <= Int64.max / 1024 else { return nil }
+                let path = URL(fileURLWithPath: String(fields[1])).standardizedFileURL
+                let title = path.path == root ? L10n.text("Gesamt") : path.lastPathComponent
+                return "\(title) · \(ByteCountFormatter.string(fromByteCount: kib * 1024, countStyle: .file))"
+            }.joined(separator: "\n")
+        } catch {
+            guard self.storage == storage else { return }
+            guestStorageUsage = L10n.text("Speicherbelegung konnte nicht ermittelt werden.")
+        }
+    }
 
     func showPlayer(kind: String) {
         if kind == "android", androidUsesDirectDisplay {

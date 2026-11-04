@@ -109,6 +109,13 @@ struct AndroidWorkspaceView: View {
                     }
                 }.disabled(model.running || model.busy)
                 AndroidFrameRateControls(model: model)
+                HStack {
+                    Button(L10n.text("Funktionierende Einstellungen merken"), action: model.saveAndroidGraphicsCheckpoint)
+                    Button(L10n.text("Gespeicherten Stand wiederherstellen"), action: model.restoreAndroidGraphicsCheckpoint)
+                }.disabled(model.running || model.busy)
+                if !model.androidGraphicsCheckpointStatus.isEmpty {
+                    Text(model.androidGraphicsCheckpointStatus).font(.caption).foregroundStyle(.secondary)
+                }
                 if model.androidOutputMode.usesStream {
                     AndroidStreamQualityControls(model: model)
                 }

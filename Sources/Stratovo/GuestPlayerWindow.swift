@@ -6,6 +6,7 @@ import StratovoCore
 @MainActor
 final class GuestPlayerWindows: NSObject, NSWindowDelegate {
     private var windows: [String: NSWindow] = [:]
+    private weak var model: AppModel?
 
     func show(kind: String, model: AppModel) {
         guard ["android", "windows", "ubuntu"].contains(kind) else { return }
@@ -30,11 +31,17 @@ final class GuestPlayerWindows: NSObject, NSWindowDelegate {
             window.setFrameAutosaveName("OpenGuest.player.\(kind)")
             windows[kind] = window
         }
+        self.model = model
+        model.setGuestPlayerVisible(true, kind: kind)
         window.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
-    func hide(kind: String) { windows[kind]?.orderOut(nil) }
+    func hide(kind: String) {
+        guard let window = windows[kind] else { return }
+        window.orderOut(nil)
+        model?.setGuestPlayerVisible(false, kind: kind)
+    }
 
     func toggleFullScreen(kind: String) { windows[kind]?.toggleFullScreen(nil) }
 
@@ -61,8 +68,11 @@ final class GuestPlayerWindows: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        // Release held guest keys when the display is hidden.
-        (notification.object as? NSWindow)?.makeFirstResponder(nil)
+        guard let window = notification.object as? NSWindow else { return }
+        window.makeFirstResponder(nil)
+        if let kind = windows.first(where: { $0.value === window })?.key {
+            model?.setGuestPlayerVisible(false, kind: kind)
+        }
     }
 }
 
