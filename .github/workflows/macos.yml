@@ -106,7 +106,7 @@ jobs:
       - name: Save workspace previews
         uses: actions/upload-artifact@v7
         with:
-          name: Stratovo-Beta7.7-Window-Preview
+          name: Stratovo-Beta7.8-Window-Preview
           path: dist/workspace-preview/*.png
           if-no-files-found: error
           retention-days: 14
@@ -124,14 +124,14 @@ jobs:
       - name: Archive test app
         run: |
           /usr/bin/ditto -c -k --sequesterRsrc --keepParent dist/Stratovo.app dist/Stratovo-macOS-AppleSilicon.app.zip
-          bash scripts/package-dmg.sh dist/Stratovo.app dist/Stratovo_1.0.0-beta.7.7_AppleSilicon.dmg Stratovo
+          bash scripts/package-dmg.sh dist/Stratovo.app dist/Stratovo_1.0.0-beta.7.8_AppleSilicon.dmg Stratovo
       - name: Upload compiled app
         uses: actions/upload-artifact@v7
         with:
           name: Stratovo-macOS-AppleSilicon-test-app
           path: |
             dist/Stratovo-macOS-AppleSilicon.app.zip
-            dist/Stratovo_1.0.0-beta.7.7_AppleSilicon.dmg
+            dist/Stratovo_1.0.0-beta.7.8_AppleSilicon.dmg
           if-no-files-found: error
           retention-days: 14
 
@@ -147,23 +147,23 @@ jobs:
         with:
           name: Stratovo-macOS-AppleSilicon-test-app
           path: release-assets
-      - name: Publish official 1.0 Beta 7.7 after successful tests
+      - name: Publish official 1.0 Beta 7.8 after successful tests
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
-          tag=v1.0.0-beta.7.7
+          tag=v1.0.0-beta.7.8
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Release already exists; preserving published assets."
             exit 0
           fi
           cd release-assets
-          sha256sum Stratovo-macOS-AppleSilicon.app.zip Stratovo_1.0.0-beta.7.7_AppleSilicon.dmg > SHA256SUMS
+          sha256sum Stratovo-macOS-AppleSilicon.app.zip Stratovo_1.0.0-beta.7.8_AppleSilicon.dmg > SHA256SUMS
           cd ..
           gh release create "$tag" --target "$RELEASE_COMMIT" --prerelease \
-            --title "Stratovo 1.0 Beta 7.7" --notes-file docs/RELEASE_1.0_BETA7_7.md \
+            --title "Stratovo 1.0 Beta 7.8" --notes-file docs/RELEASE_1.0_BETA7_8.md \
             release-assets/Stratovo-macOS-AppleSilicon.app.zip \
-            release-assets/Stratovo_1.0.0-beta.7.7_AppleSilicon.dmg \
+            release-assets/Stratovo_1.0.0-beta.7.8_AppleSilicon.dmg \
             release-assets/SHA256SUMS
 
