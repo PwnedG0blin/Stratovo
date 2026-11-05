@@ -88,6 +88,7 @@ final class GitHubUpdateChecker: ObservableObject {
                 state = .upToDate(latest?.tagName)
             }
         } catch {
+            if Task.isCancelled { checkedThisSession = false; return }
             state = .failed(L10n.text("Die GitHub-Abfrage ist fehlgeschlagen. Prüfe die Internetverbindung und versuche es erneut."))
         }
     }

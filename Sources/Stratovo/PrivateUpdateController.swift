@@ -87,12 +87,16 @@ final class PrivateUpdateController: ObservableObject {
         guard !busy else { return }
         restore()
         guard let token else { if !needsUnlock { status = "Bitte zuerst GitHub verbinden." }; return }
+        let previousStatus = status
         checkedThisSession = true
         busy = true; status = "Private Builds werden geprüft …"
         defer { busy = false }
         defaults.set(Date(), forKey: lastAttemptKey)
         do { update(try await fetchLatest(token)) }
-        catch { status = safeMessage(error) }
+        catch {
+            if Task.isCancelled { checkedThisSession = false; status = previousStatus; return }
+            status = safeMessage(error)
+        }
     }
     func install(using installer: AppUpdateInstaller, model: AppModel) async {
         guard !busy, let token, let available else { return }

@@ -1,7 +1,6 @@
 import SwiftUI
 import StratovoCore
 
-/// Explicit release checks and user-initiated verified app replacement.
 @MainActor
 struct GitHubUpdatesView: View {
     @ObservedObject var model: AppModel
