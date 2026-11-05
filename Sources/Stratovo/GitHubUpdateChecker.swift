@@ -17,19 +17,22 @@ final class GitHubUpdateChecker: ObservableObject {
     @Published private(set) var state: GitHubUpdateState = .idle
     @Published private(set) var lastChecked: Date?
 
+    private var checkedThisSession = false
+    private let defaults: UserDefaults
     private let lastAttemptKey = "Pixelkoje.GitHubUpdates.lastAttempt"
     private let fetch: (URLRequest) async throws -> (Data, URLResponse)
     let installedVersion: String
 
-    init(installedVersion: String? = nil,
+    init(installedVersion: String? = nil, defaults: UserDefaults = .standard,
          fetch: @escaping (URLRequest) async throws -> (Data, URLResponse) = { try await URLSession.shared.data(for: $0) }) {
+        self.defaults = defaults
         self.fetch = fetch
         self.installedVersion = installedVersion ?? Bundle.main.object(forInfoDictionaryKey: "StratovoReleaseVersion") as? String ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unbekannt"
     }
 
     func checkIfDue(includePrereleases: Bool) async {
-        if let last = UserDefaults.standard.object(forKey: lastAttemptKey) as? Date,
-           Date().timeIntervalSince(last) < 24 * 60 * 60 { return }
+        if checkedThisSession, let last = defaults.object(forKey: lastAttemptKey) as? Date,
+           Date().timeIntervalSince(last) < 60 * 60 { return }
         await check(includePrereleases: includePrereleases)
     }
 
@@ -39,10 +42,11 @@ final class GitHubUpdateChecker: ObservableObject {
             state = .failed(L10n.text("Die installierte App-Version konnte nicht gelesen werden."))
             return
         }
+        checkedThisSession = true
         isChecking = true
         defer { isChecking = false }
         // Prevent repeated automatic requests when GitHub's public rate limit is reached.
-        UserDefaults.standard.set(Date(), forKey: lastAttemptKey)
+        defaults.set(Date(), forKey: lastAttemptKey)
 
         var request = URLRequest(url: StratovoReleaseCatalog.apiURL)
         request.timeoutInterval = 15
@@ -84,6 +88,7 @@ final class GitHubUpdateChecker: ObservableObject {
                 state = .upToDate(latest?.tagName)
             }
         } catch {
+            if Task.isCancelled { checkedThisSession = false; return }
             state = .failed(L10n.text("Die GitHub-Abfrage ist fehlgeschlagen. Prüfe die Internetverbindung und versuche es erneut."))
         }
     }

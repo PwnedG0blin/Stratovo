@@ -5,6 +5,12 @@ import StratovoCore
 struct ContentView: View {
     @ObservedObject var model: AppModel
     var releaseLabel = AppPresentation.releaseLabel
+    @StateObject private var updateChecker = GitHubUpdateChecker()
+    @StateObject private var privateUpdates = PrivateUpdateController()
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("Stratovo.privateUpdates.automatic") private var automaticPrivateUpdates = true
+    @AppStorage("Pixelkoje.GitHubUpdates.automatic") private var automaticPublicUpdates = true
+    @AppStorage("Pixelkoje.GitHubUpdates.prereleases") private var includePrereleases = true
     @State private var selection: WorkspaceTab = .dashboard
     @State private var showDiagnostics = false
     @State private var showAbout = false
@@ -37,6 +43,19 @@ struct ContentView: View {
         .disclosureGroupStyle(WorkspaceButtonDisclosureStyle())
         .modifier(WorkspaceWindowTheme())
         .frame(minWidth: 860, minHeight: 650).tint(MidnightPalette.turquoise)
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            if AppPresentation.isPrivateBuild { privateUpdates.restore() }
+            while !Task.isCancelled {
+                if AppPresentation.isPrivateBuild {
+                    if automaticPrivateUpdates { await privateUpdates.checkIfDue() }
+                } else if automaticPublicUpdates {
+                    await updateChecker.checkIfDue(includePrereleases: includePrereleases)
+                }
+                do { try await Task.sleep(nanoseconds: 60 * 60 * 1_000_000_000) }
+                catch { return }
+            }
+        }
         .onChange(of: model.settings.iso) { _, _ in model.refreshWindowsISO() }
         .sheet(isPresented: $model.showStorageSetup) { StorageSetupSheet(model: model).interactiveDismissDisabled() }
         .sheet(isPresented: $showDiagnostics) { SessionDiagnosticsView(model: model) }
@@ -51,7 +70,7 @@ struct ContentView: View {
             if $0 == .setup { settingsSection = "storage" }
             selection = $0
         }
-        case .updates: GitHubUpdatesView(model: model)
+        case .updates: GitHubUpdatesView(model: model, checker: updateChecker, privateUpdates: privateUpdates)
         case .android:
             VStack(alignment: .leading, spacing: 18) {
                 AndroidWorkspaceView(model: model)
@@ -118,6 +137,15 @@ struct ContentView: View {
                 }
                 Text(tab == .dashboard ? L10n.text("Meine Systeme") : tab.title).font(.system(size: 15, weight: selection == tab ? .semibold : .regular))
                 Spacer(minLength: 0)
+                if tab == .updates, AppPresentation.updateAvailable(publicState: updateChecker.state,
+                    privateUpdate: privateUpdates.available, privateBuild: AppPresentation.isPrivateBuild) {
+                    Text("1").font(.caption.weight(.semibold)).monospacedDigit()
+                        .foregroundStyle(MidnightPalette.navy)
+                        .frame(width: 22, height: 22)
+                        .background(MidnightPalette.turquoise, in: Capsule())
+                        .padding(.leading, 6)
+                        .accessibilityLabel(L10n.text("Update verfügbar"))
+                }
             }
             .padding(.horizontal, 17).padding(.vertical, 14)
             .foregroundStyle(selection == tab && appearance != .classic ? Color.white : Color.primary.opacity(0.86))
@@ -166,6 +194,15 @@ struct ContentView: View {
 }
 
 enum AppPresentation {
+    static var isPrivateBuild: Bool {
+        Bundle.main.object(forInfoDictionaryKey: "StratovoBuildFlavor") as? String == "private"
+    }
+    static func updateAvailable(publicState: GitHubUpdateState, privateUpdate: PrivateUpdateArtifact?, privateBuild: Bool) -> Bool {
+        if privateBuild { return privateUpdate != nil }
+        if case .available = publicState { return true }
+        return false
+    }
+
     static var releaseLabel: String {
         releaseLabel(info: Bundle.main.infoDictionary ?? [:])
     }
@@ -178,4 +215,3 @@ enum AppPresentation {
         return "\(version) · \(flavor)\(suffix) · \(build)"
     }
 }
-
