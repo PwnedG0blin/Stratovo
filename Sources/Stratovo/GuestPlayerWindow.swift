@@ -6,6 +6,7 @@ import StratovoCore
 @MainActor
 final class GuestPlayerWindows: NSObject, NSWindowDelegate {
     private var windows: [String: NSWindow] = [:]
+    private var windowStates: [String: GuestWindowState] = [:]
     private weak var model: AppModel?
 
     func show(kind: String, model: AppModel) {
@@ -28,7 +29,7 @@ final class GuestPlayerWindows: NSObject, NSWindowDelegate {
                 .environment(\.locale, Locale(identifier: L10n.code))
                 .environment(\.layoutDirection, L10n.code == "ar" ? .rightToLeft : .leftToRight))
             window.center()
-            window.setFrameAutosaveName("OpenGuest.player.\(kind)")
+            windowStates[kind] = GuestWindowState(window: window, key: "player.\(kind)", legacyName: "OpenGuest.player.\(kind)")
             windows[kind] = window
         }
         self.model = model
@@ -39,6 +40,7 @@ final class GuestPlayerWindows: NSObject, NSWindowDelegate {
 
     func hide(kind: String) {
         guard let window = windows[kind] else { return }
+        windowStates[kind]?.save()
         window.orderOut(nil)
         model?.setGuestPlayerVisible(false, kind: kind)
     }
