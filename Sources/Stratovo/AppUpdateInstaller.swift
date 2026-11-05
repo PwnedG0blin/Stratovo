@@ -59,11 +59,11 @@ final class AppUpdateInstaller: ObservableObject {
                   FileManager.default.isWritableFile(atPath: current.deletingLastPathComponent().path) else {
                 throw PrivateUpdateAPI.failure("Kopiere Stratovo zunächst in einen beschreibbaren Programme-Ordner und starte sie von dort.")
             }
-            let directory = storage.url.appendingPathComponent("Updates/" + UUID().uuidString, isDirectory: true)
-            guard directory.resolvingSymlinksInPath() == directory.standardizedFileURL else {
-                throw PrivateUpdateAPI.failure("Updateordner darf keine Verknüpfung sein.")
-            }
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            // launchd can reject job files on volumes that do not enforce ownership.
+            let directory = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+                .appendingPathComponent("Stratovo-update-" + UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                    attributes: [.posixPermissions: 0o700])
             status = L10n.text("Update wird von GitHub geladen …")
             let data = try await download()
             status = L10n.text("Prüfsumme und App werden geprüft …")
@@ -93,6 +93,7 @@ final class AppUpdateInstaller: ObservableObject {
             ]
             let jobData = try PropertyListSerialization.data(fromPropertyList: configuration, format: .xml, options: 0)
             try jobData.write(to: job, options: .atomic)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: job.path)
             let expectedBuild = Bundle(url: prepared)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String
             let ready = directory.appendingPathComponent("ready")
             let failed = directory.appendingPathComponent("failed")
@@ -102,7 +103,9 @@ final class AppUpdateInstaller: ObservableObject {
                         arguments: ["bootstrap", domain, job.path]), timeout: 12)
                 }.value
                 guard result.status == 0 else {
-                    throw PrivateUpdateAPI.failure("Update-Helfer konnte nicht gestartet werden. Details stehen im Updateordner.")
+                    let diagnostic = "launchctl bootstrap (Exit \(result.status))\n\(result.output)"
+                    try? Data(diagnostic.utf8).write(to: directory.appendingPathComponent("Launchctl.log"), options: .atomic)
+                    throw PrivateUpdateAPI.failure("Update-Helfer konnte nicht gestartet werden. Updateordner: \(directory.path)")
                 }
                 var confirmed = false
                 for _ in 0..<300 {
@@ -116,7 +119,7 @@ final class AppUpdateInstaller: ObservableObject {
                     try await Task.sleep(nanoseconds: 100_000_000)
                 }
                 guard confirmed, !model.running, !model.graphicsLab.active else {
-                    throw PrivateUpdateAPI.failure("Update-Helfer hat die Übergabe nicht bestätigt. Details stehen in Installation.log im Updateordner.")
+                    throw PrivateUpdateAPI.failure("Update-Helfer hat die Übergabe nicht bestätigt. Protokoll: \(log.path)")
                 }
                 try Data("install".utf8).write(to: directory.appendingPathComponent("commit"), options: .atomic)
             } catch {
