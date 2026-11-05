@@ -9,10 +9,10 @@ permissions:
   actions: read
 concurrency:
   group: stratovo-public-dmg-layout
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   repackage:
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
