@@ -4,9 +4,9 @@ import StratovoCore
 @MainActor
 struct PrivateBetaUpdatesView: View {
     @ObservedObject var model: AppModel
-    @StateObject private var updates = PrivateUpdateController()
+    @ObservedObject var updates: PrivateUpdateController
     @StateObject private var installer = AppUpdateInstaller()
-    @AppStorage("Stratovo.privateUpdates.automatic") private var automatic = false
+    @AppStorage("Stratovo.privateUpdates.automatic") private var automatic = true
     @State private var connecting = false
     @State private var confirming = false
     @State private var credential = ""
@@ -22,6 +22,9 @@ struct PrivateBetaUpdatesView: View {
                     Button(L10n.text("Auf Updates prüfen")) { Task { await updates.check() } }
                     Button(L10n.text("GitHub trennen")) { updates.disconnect() }.buttonStyle(.borderless)
                 } else {
+                    if updates.needsUnlock {
+                        Button(L10n.text(CredentialVault.touchIDAvailable ? "Mit Touch ID freigeben" : "Gespeicherten Zugang freigeben")) { Task { await updates.unlockSavedCredential() } }
+                    }
                     Button(L10n.text("GitHub verbinden …")) { connecting = true }
                 }
                 if updates.busy || installer.busy { ProgressView().controlSize(.small) }
@@ -36,7 +39,7 @@ struct PrivateBetaUpdatesView: View {
             }
             if !installer.status.isEmpty { Text(installer.status).font(.callout).textSelection(.enabled) }
             if updates.connected {
-                Toggle(L10n.text("Automatisch höchstens einmal täglich prüfen"), isOn: $automatic)
+                Toggle(L10n.text("Beim Start und stündlich automatisch prüfen"), isOn: $automatic)
                     .onChange(of: automatic) { _, enabled in
                         if enabled { Task { await updates.checkIfDue() } }
                     }
@@ -78,6 +81,7 @@ struct PrivateBetaUpdatesView: View {
 
     private var connectionHelp: some View {
         VStack(alignment: .leading, spacing: 12) {
+            Text(CredentialVault.availabilityMessage).foregroundStyle(.secondary)
             Text(L10n.text("Einmalig auf GitHub einen Fine-grained Personal Access Token erstellen: Resource owner PwnedG0blin, Only select repositories → Stratovo-Private, Repository permissions → Actions: Read-only. Keine Schreibrechte nötig."))
             Link(L10n.text("GitHub-Zugang erstellen ↗"), destination: URL(string: "https://github.com/settings/personal-access-tokens/new")!)
             Text(L10n.text("Den Token ausschließlich hier in Stratovo eingeben. Er wird im macOS-Schlüsselbund gespeichert. Danach private Updates direkt über diese Ansicht prüfen und installieren. Bei Ablauf erneut verbinden; mit GitHub trennen wird der gespeicherte Zugang entfernt."))

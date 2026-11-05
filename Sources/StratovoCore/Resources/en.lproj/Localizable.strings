@@ -1064,3 +1064,7 @@
 "Vorhanden" = "Installed";
 "Internet über den Mac" = "Internet via your Mac";
 "Android nutzt die Internetverbindung deines Macs. Die Bezeichnung des virtuellen Netzwerks in Android beschreibt nicht den WLAN- oder LAN-Anschluss des Macs." = "Android uses your Mac’s internet connection. The virtual network name shown in Android does not describe your Mac’s Wi-Fi or Ethernet connection.";
+
+"Beim Start und stündlich automatisch prüfen" = "Check automatically at startup and hourly";
+
+"Update verfügbar" = "Update available";

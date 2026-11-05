@@ -2,15 +2,25 @@ import SwiftUI
 import StratovoCore
 
 /// Explicit release checks and user-initiated verified app replacement.
+@MainActor
 struct GitHubUpdatesView: View {
     @ObservedObject var model: AppModel
     var compact = false
     @StateObject private var installer = AppUpdateInstaller()
     @State private var confirmInstall = false
     @State private var showSettings = false
-    @StateObject private var checker = GitHubUpdateChecker()
-    @AppStorage("Pixelkoje.GitHubUpdates.automatic") private var automaticChecks = false
+    @ObservedObject var checker: GitHubUpdateChecker
+    @ObservedObject var privateUpdates: PrivateUpdateController
+    @AppStorage("Pixelkoje.GitHubUpdates.automatic") private var automaticChecks = true
     @AppStorage("Pixelkoje.GitHubUpdates.prereleases") private var includePrereleases = true
+
+    init(model: AppModel, compact: Bool = false, checker: GitHubUpdateChecker? = nil,
+         privateUpdates: PrivateUpdateController? = nil) {
+        self.model = model
+        self.compact = compact
+        self.checker = checker ?? GitHubUpdateChecker()
+        self.privateUpdates = privateUpdates ?? PrivateUpdateController()
+    }
 
     private var privateBuild: Bool {
         Bundle.main.object(forInfoDictionaryKey: "StratovoBuildFlavor") as? String == "private"
@@ -18,7 +28,7 @@ struct GitHubUpdatesView: View {
 
     var body: some View {
         if privateBuild {
-            PrivateBetaUpdatesView(model: model)
+            PrivateBetaUpdatesView(model: model, updates: privateUpdates)
         } else {
             publicUpdates
         }
@@ -44,7 +54,7 @@ struct GitHubUpdatesView: View {
                 if checker.isChecking { ProgressView().controlSize(.small) }
             }
             DisclosureGroup(L10n.text("Update-Einstellungen und Hinweise"), isExpanded: $showSettings) {
-            Toggle(L10n.text("Automatisch höchstens einmal täglich prüfen"), isOn: $automaticChecks)
+            Toggle(L10n.text("Beim Start und stündlich automatisch prüfen"), isOn: $automaticChecks)
                 .onChange(of: automaticChecks) { _, enabled in
                     if enabled { Task { await checker.checkIfDue(includePrereleases: includePrereleases) } }
                 }
