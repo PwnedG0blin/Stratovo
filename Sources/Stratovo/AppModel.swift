@@ -535,6 +535,7 @@ final class AppModel: ObservableObject {
     let audio = GuestAudioController()
     let installer = SetupInstaller()
     private let playerWindows = GuestPlayerWindows()
+    private let directWindowState = DirectGuestWindowState()
     @Published private var hiddenGuestPlayers: Set<String> = []
 
     func guestPlayerIsHidden(kind: String) -> Bool {
@@ -673,12 +674,19 @@ final class AppModel: ObservableObject {
 
     func showPlayer(kind: String) {
         if kind == "android", androidUsesDirectDisplay {
+            rememberDirectWindow(kind: kind)
             playerWindows.hide(kind: kind)
             activateAndroidGraphics()
         } else if kind == "windows", windowsUsesDirectDisplay {
+            rememberDirectWindow(kind: kind)
             playerWindows.hide(kind: kind)
             activateWindowsGraphics()
         } else { playerWindows.show(kind: kind, model: self) }
+    }
+    private func rememberDirectWindow(kind: String) {
+        guard let process, process.isRunning, let executable = process.executableURL?.path else { return }
+        directWindowState.start(pid: process.processIdentifier, executable: executable, kind: kind,
+            profile: kind == "android" ? settings.selectedAVD : "")
     }
     private func activateAndroidGraphics() {
         guard androidUsesDirectDisplay, let child = process else { return }
@@ -1830,6 +1838,7 @@ final class AppModel: ObservableObject {
     }
 
     private func didExit(code: Int32) async {
+        directWindowState.stop()
         recordDiagnostic(L10n.text("Gast beendet"), "\(sessionName) · Exit-Code \(code) · Beenden angefordert: \(stopRequested)")
         busy = true
         defer { busy = false }
@@ -2031,4 +2040,3 @@ final class AppModel: ObservableObject {
         return panel.runModal() == .OK ? panel.url?.path : nil
     }
 }
-
