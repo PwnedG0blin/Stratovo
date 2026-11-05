@@ -33,6 +33,17 @@ struct SessionDiagnosticsView: View {
                     if model.diagnosticBusy { ProgressView().controlSize(.small) }
                     Text(L10n.text("Windows + Android + Ubuntu + Einrichtung in einer Datei")).font(.caption).foregroundStyle(.secondary)
                 }
+                HStack {
+                    Button(L10n.text("Android-Diagnose kopieren")) {
+                        Task { await model.copyAndroidDiagnostics() }
+                    }.disabled(model.diagnosticBusy)
+                    Button(L10n.text("Speicherbelegung messen")) {
+                        Task { await model.measureGuestStorage() }
+                    }.disabled(!model.storageReady || model.guestStorageUsageBusy)
+                }
+                if !model.guestStorageUsage.isEmpty {
+                    Text(model.guestStorageUsage).font(.caption).textSelection(.enabled)
+                }
                 if !model.diagnosticStatus.isEmpty { Text(model.diagnosticStatus).font(.caption).textSelection(.enabled) }
                 ScrollView([.horizontal, .vertical]) {
                     Text(model.log).font(.system(size: 11, design: .monospaced))
