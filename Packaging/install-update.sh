@@ -33,22 +33,36 @@ finish() {
 }
 trap finish EXIT
 printf 'Update-Helfer gestartet · %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-[[ "$app_pid" =~ ^[0-9]+$ && "$app_pid" -gt 1 && "$app_pid" -ne "$$" ]]
-[[ "$target" == /*/Stratovo.app && "$source_app" == /*/Stratovo.app ]]
-[[ -d "$target" && ! -L "$target" && -d "$source_app" && ! -L "$source_app" ]]
+if ! [[ "$app_pid" =~ ^[0-9]+$ && "$app_pid" -gt 1 && "$app_pid" -ne "$$" ]]; then
+    exit 1
+fi
+if ! [[ "$target" == /*/Stratovo.app && "$source_app" == /*/Stratovo.app ]]; then
+    exit 1
+fi
+if ! [[ -d "$target" && ! -L "$target" && -d "$source_app" && ! -L "$source_app" ]]; then
+    exit 1
+fi
 parent="$(dirname -- "$target")"
-[[ -w "$parent" ]]
+if ! [[ -w "$parent" ]]; then
+    exit 1
+fi
 if [[ -n "$handoff" ]]; then
-    [[ -d "$handoff" && ! -L "$handoff" && "$handoff" == "$(dirname -- "$source_app")" ]]
+    if ! [[ -d "$handoff" && ! -L "$handoff" && "$handoff" == "$(dirname -- "$source_app")" ]]; then
+        exit 1
+    fi
 fi
 phase="App vorbereiten"
 expected_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$source_app/Contents/Info.plist")"
-[[ "$expected_build" =~ ^[0-9]+$ ]]
+if ! [[ "$expected_build" =~ ^[0-9]+$ ]]; then
+    exit 1
+fi
 stage="$(mktemp -d "$parent/.Stratovo-update.XXXXXX")"
 backup="$stage/Previous-Stratovo.app"
 /usr/bin/ditto "$source_app" "$stage/Stratovo.app"
 /usr/bin/codesign --verify --deep --strict "$stage/Stratovo.app"
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$stage/Stratovo.app/Contents/Info.plist")" == "$expected_build" ]]
+if ! [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$stage/Stratovo.app/Contents/Info.plist")" == "$expected_build" ]]; then
+    exit 1
+fi
 printf 'App vorbereitet · Build %s\n' "$expected_build"
 if [[ -n "$handoff" ]]; then
     printf '%s\n' "$expected_build" > "$handoff/ready"
@@ -57,7 +71,9 @@ if [[ -n "$handoff" ]]; then
         [[ -f "$handoff/commit" ]] && break
         sleep 1
     done
-    [[ -f "$handoff/commit" ]]
+    if ! [[ -f "$handoff/commit" ]]; then
+        exit 1
+    fi
 fi
 phase="Auf Stratovo warten"
 for ((attempt=0; attempt<120; attempt++)); do
@@ -69,7 +85,9 @@ phase="App austauschen"
 /bin/mv "$target" "$backup"
 /bin/mv "$stage/Stratovo.app" "$target"
 replaced=1
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$target/Contents/Info.plist")" == "$expected_build" ]]
+if ! [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$target/Contents/Info.plist")" == "$expected_build" ]]; then
+    exit 1
+fi
 phase="Stratovo starten"
 /usr/bin/open -n "$target"
 printf 'Update installiert · Build %s. Vorherige App für Rückkehr: %s\n' "$expected_build" "$backup"
