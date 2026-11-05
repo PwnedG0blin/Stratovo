@@ -1,0 +1,60 @@
+name: Refresh public DMG layout
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/dmg-repackage.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: stratovo-public-dmg-layout
+  cancel-in-progress: false
+jobs:
+  repackage:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Stratovo-macOS-AppleSilicon-test-app
+          run-id: 42071679208
+          github-token: ${{ github.token }}
+          path: original
+      - name: Verify and reuse tested public app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download v1.0.0-beta.7.9 --pattern SHA256SUMS --dir original
+          cd original
+          awk '$2 == "Stratovo-macOS-AppleSilicon.app.zip"' SHA256SUMS > App-SHA256
+          test -s App-SHA256
+          shasum -a 256 -c App-SHA256
+          /usr/bin/ditto -x -k Stratovo-macOS-AppleSilicon.app.zip app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' app/Stratovo.app/Contents/Info.plist)" = 1046
+          test "$(/usr/libexec/PlistBuddy -c 'Print :StratovoReleaseVersion' app/Stratovo.app/Contents/Info.plist)" = 1.0.0-beta.7.9
+          codesign --verify --deep --strict app/Stratovo.app
+      - name: Package and verify shared Finder layout
+        run: |
+          mkdir -p dist
+          bash scripts/package-dmg.sh original/app/Stratovo.app dist/Stratovo_1.0.0-beta.7.9_AppleSilicon.dmg Stratovo
+          cp original/Stratovo-macOS-AppleSilicon.app.zip dist/
+          cd dist
+          shasum -a 256 Stratovo-macOS-AppleSilicon.app.zip Stratovo_1.0.0-beta.7.9_AppleSilicon.dmg > SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Stratovo-Public-Beta7.9-DMG-Light-Layout
+          path: |
+            dist/*.dmg
+            dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+      - name: Replace only the DMG and its checksum in the current public beta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/${{ github.repository }}/releases --jq '[.[] | select(.draft == false)][0].tag_name')" = v1.0.0-beta.7.9
+          gh release upload v1.0.0-beta.7.9 dist/Stratovo_1.0.0-beta.7.9_AppleSilicon.dmg dist/SHA256SUMS --clobber
