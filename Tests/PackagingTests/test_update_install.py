@@ -8,6 +8,15 @@ import unittest
 
 
 class UpdateInstallationTests(unittest.TestCase):
+    def wait_for_exit(self, process, timeout):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            result = process.poll()
+            if result is not None:
+                return result
+            time.sleep(0.02)
+        self.fail(self.output.read_text() if self.output.exists() else "Process did not exit")
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix="stratovo update ")
         self.root = pathlib.Path(self.directory.name)
@@ -42,7 +51,7 @@ class UpdateInstallationTests(unittest.TestCase):
         for process in (self.worker, self.parent):
             if process and process.poll() is None:
                 process.terminate()
-                process.wait(timeout=5)
+                self.wait_for_exit(process, 5)
         self.directory.cleanup()
 
     def start(self):
@@ -69,8 +78,8 @@ class UpdateInstallationTests(unittest.TestCase):
     def commit(self):
         self.source.parent.joinpath("commit").write_text("install\n")
         self.parent.terminate()
-        self.parent.wait(timeout=5)
-        return self.worker.wait(timeout=8)
+        self.wait_for_exit(self.parent, 5)
+        return self.wait_for_exit(self.worker, 8)
 
     def test_ready_means_staged_copy_is_valid_and_current_app_is_intact(self):
         self.start()
@@ -95,7 +104,7 @@ class UpdateInstallationTests(unittest.TestCase):
     def test_bad_package_fails_before_parent_is_asked_to_exit(self):
         self.source.joinpath("Contents/Info.plist").write_bytes(plistlib.dumps({"CFBundleVersion": "bad"}))
         self.start()
-        self.assertNotEqual(self.worker.wait(timeout=5), 0)
+        self.assertNotEqual(self.wait_for_exit(self.worker, 5), 0)
         self.assertFalse(self.source.parent.joinpath("ready").exists())
         self.assertEqual(self.build(), "1048")
         self.assertIsNone(self.parent.poll())
@@ -105,10 +114,9 @@ class UpdateInstallationTests(unittest.TestCase):
         self.target.rename(original)
         self.target.symlink_to(original)
         self.start()
-        self.assertNotEqual(self.worker.wait(timeout=5), 0)
+        self.assertNotEqual(self.wait_for_exit(self.worker, 5), 0)
         self.assertFalse(self.source.parent.joinpath("ready").exists())
         self.assertIsNone(self.parent.poll())
-
 
 
     @unittest.skipUnless(__import__("sys").platform == "darwin", "requires macOS launchd")
@@ -136,6 +144,7 @@ class UpdateInstallationTests(unittest.TestCase):
         finally:
             subprocess.run(["/bin/launchctl", "bootout", domain + "/" + label],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+
 
 if __name__ == "__main__":
     unittest.main()
