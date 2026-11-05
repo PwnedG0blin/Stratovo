@@ -36,7 +36,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>1045</string>
+	<string>1046</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>NSHighResolutionCapable</key>
@@ -46,7 +46,6 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>StratovoReleaseVersion</key>
-	<string>1.0.0-beta.7.8</string>
+	<string>1.0.0-beta.7.9</string>
 </dict>
 </plist>
-

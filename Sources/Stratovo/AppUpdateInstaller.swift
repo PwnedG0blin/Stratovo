@@ -76,14 +76,56 @@ final class AppUpdateInstaller: ObservableObject {
             guard let helper = Bundle.main.url(forResource: "install-update", withExtension: "sh") else { throw PrivateUpdateAPI.failure("Update-Helfer fehlt.") }
             let helperCopy = directory.appendingPathComponent("install-update.sh")
             try FileManager.default.copyItem(at: helper, to: helperCopy)
-            let child = Process(); child.executableURL = URL(fileURLWithPath: "/bin/bash")
-            child.arguments = [helperCopy.path, String(ProcessInfo.processInfo.processIdentifier), current.path, prepared.path]
-            child.standardInput = FileHandle.nullDevice
             let log = directory.appendingPathComponent("Installation.log")
-            FileManager.default.createFile(atPath: log.path, contents: nil)
-            let output = try FileHandle(forWritingTo: log)
-            child.standardOutput = output; child.standardError = output
-            try child.run(); try? output.close()
+            let label = "org.pwnedg0blin.stratovo.update." + UUID().uuidString
+            let domain = "gui/\(getuid())"
+            let job = directory.appendingPathComponent("install-update.plist")
+            let configuration: [String: Any] = [
+                "Label": label,
+                "ProgramArguments": ["/bin/bash", helperCopy.path,
+                    String(ProcessInfo.processInfo.processIdentifier), current.path, prepared.path,
+                    directory.path, label],
+                "RunAtLoad": true,
+                "KeepAlive": false,
+                "AbandonProcessGroup": true,
+                "StandardOutPath": log.path,
+                "StandardErrorPath": log.path
+            ]
+            let jobData = try PropertyListSerialization.data(fromPropertyList: configuration, format: .xml, options: 0)
+            try jobData.write(to: job, options: .atomic)
+            let expectedBuild = Bundle(url: prepared)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+            let ready = directory.appendingPathComponent("ready")
+            let failed = directory.appendingPathComponent("failed")
+            do {
+                let result = try await Task.detached {
+                    try CommandCapture.run(CommandSpec(executable: "/bin/launchctl",
+                        arguments: ["bootstrap", domain, job.path]), timeout: 12)
+                }.value
+                guard result.status == 0 else {
+                    throw PrivateUpdateAPI.failure("Update-Helfer konnte nicht gestartet werden. Details stehen im Updateordner.")
+                }
+                var confirmed = false
+                for _ in 0..<300 {
+                    try Task.checkCancellation()
+                    if FileManager.default.fileExists(atPath: failed.path) { break }
+                    if let value = try? String(contentsOf: ready, encoding: .utf8),
+                       value.trimmingCharacters(in: .whitespacesAndNewlines) == expectedBuild {
+                        confirmed = true
+                        break
+                    }
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
+                guard confirmed, !model.running, !model.graphicsLab.active else {
+                    throw PrivateUpdateAPI.failure("Update-Helfer hat die Übergabe nicht bestätigt. Details stehen in Installation.log im Updateordner.")
+                }
+                try Data("install".utf8).write(to: directory.appendingPathComponent("commit"), options: .atomic)
+            } catch {
+                _ = try? await Task.detached {
+                    try CommandCapture.run(CommandSpec(executable: "/bin/launchctl",
+                        arguments: ["bootout", domain + "/" + label]), timeout: 5)
+                }.value
+                throw error
+            }
             status = L10n.text("Update geprüft. Stratovo wird ausgetauscht und neu gestartet …")
             model.setGraphicsLabBusy(false)
             NSApplication.shared.terminate(nil)
