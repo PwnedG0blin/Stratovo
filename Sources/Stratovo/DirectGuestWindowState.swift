@@ -58,7 +58,7 @@ private actor DirectGuestWindowWorker {
         guard !Task.isCancelled, AXIsProcessTrusted(), !screens.isEmpty else { return }
         if window == nil { window = findWindow() }
         guard let window else { return }
-        guard let frame = frame(of: window) else { self.window = nil; previousFrame = nil; restored = false; return }
+        guard let frame = frame(of: window) else { self.window = nil; previousFrame = nil; return }
         guard attribute(window, kAXMinimizedAttribute) as? Bool != true,
               attribute(window, "AXFullScreen") as? Bool != true else { previousFrame = nil; return }
         guard GuestWindowFrame.constrained(frame, to: screens) != nil else { return }
